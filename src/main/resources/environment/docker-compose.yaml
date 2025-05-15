@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  snmp-agent:
+    image: etingof/snmpsim
+    command: --agent-udpv4-endpoint=0.0.0.0:161 --data-dir=/usr/share/snmp-data
+    ports:
+      - "1091:161/udp"
+    networks:
+      - snmp-network
+
+  app-host-linux:
+    container_name: app-host-linux
+    networks:
+      - snmp-network
+    build: ./app-host-linux
+
+  postgresdb:
+    container_name: db
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: mydb
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "10100:5432"
+    networks:
+      - snmp-network
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin-container
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "10102:80"
+    depends_on:
+      - postgresdb
+    networks:
+      - snmp-network
+
+
+volumes:
+  postgres-data:
+
+networks:
+  snmp-network:
+    driver: bridge

@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  linux-host:
+    container_name: linux-host
+    networks:
+      - snmp-network
+    build: ./linux-host
+    ports:
+      - "1090:161"  # Expose SNMP port for queries
+
+  snmp-agent:
+    image: etingof/snmpsim
+    command: --agent-udpv4-endpoint=0.0.0.0:161 --data-dir=/usr/share/snmp-data
+    ports:
+      - "1091:161/udp"
+    networks:
+      - snmp-network
+
+
+  app-host-linux:
+    container_name: app-host-linux
+    networks:
+      - snmp-network
+    build: ./app-host-linux
+
+
+    #  windows-host:
+    #    container_name: windows-host
+    #    networks:
+    #      - snmp-network
+    #    build: ./windows-host
+    #    ports:
+    #      - "161:161/udp"  # Expose SNMP port for queries
+    #    environment:
+    #      - TZ=UTC
+
+    #  router:
+    #    container_name: router
+    #    networks:
+    #      - snmp-network
+    #    build: ./router
+    #    ports:
+    #      - "1091:161"
+    #      -
+
+
+networks:
+  snmp-network:
+    driver: bridge
