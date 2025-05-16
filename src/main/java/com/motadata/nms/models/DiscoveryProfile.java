@@ -1,27 +1,69 @@
 package com.motadata.nms.models;
 
-import io.vertx.core.json.JsonObject;
+public class DiscoveryProfile {
+  private Integer id;
+  private String target;
+  private Integer port;
+  private Integer credentialsProfileId;
 
-public record DiscoveryProfile (Integer id, JsonObject targetIps, Integer port, Integer credentialsProfileId){
-
-  public DiscoveryProfile(JsonObject targetIps, Integer port, Integer credentialsProfileId){
-    this(null, targetIps, port, credentialsProfileId);
+  // Default constructor
+  public DiscoveryProfile() {
   }
 
-  public JsonObject toJson() {
-    return new JsonObject()
-      .put("id", id)
-      .put("targetIps", targetIps)
-      .put("port", port)
-      .put("credentialsProfileId", credentialsProfileId);
+  // Constructor without ID
+  public DiscoveryProfile(String target, Integer port, Integer credentialsProfileId) {
+    this(null, target, port, credentialsProfileId);
   }
 
-  public static DiscoveryProfile fromJson(JsonObject json) {
-    return new DiscoveryProfile(
-      json.getJsonObject("targetIps"),
-      json.getInteger("port"),
-      json.getInteger("credentialsProfileId")
-    );
+  // Full constructor
+  public DiscoveryProfile(Integer id, String target, Integer port, Integer credentialsProfileId) {
+    this.id = id;
+    this.target = target;
+    this.port = port;
+    this.credentialsProfileId = credentialsProfileId;
+  }
+
+  // Getters and setters
+  public Integer getId() {
+    return id;
+  }
+
+  public void setId(Integer id) {
+    this.id = id;
+  }
+
+  public String getTarget() {
+    return target;
+  }
+
+  public void setTarget(String target) {
+    this.target = target;
+  }
+
+  public Integer getPort() {
+    return port;
+  }
+
+  public void setPort(Integer port) {
+    this.port = port;
+  }
+
+  public Integer getCredentialsProfileId() {
+    return credentialsProfileId;
+  }
+
+  public void setCredentialsProfileId(Integer credentialsProfileId) {
+    this.credentialsProfileId = credentialsProfileId;
+  }
+
+  @Override
+  public String toString() {
+    return "DiscoveryProfile{" +
+      "id=" + id +
+      ", target='" + target + '\'' +
+      ", port=" + port +
+      ", credentialsProfileId=" + credentialsProfileId +
+      '}';
   }
 }
 

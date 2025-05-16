@@ -5,7 +5,23 @@ import java.util.List;
 public class MetricGroup {
   private Integer id;
   private String name;
-  private List<String> metrics;
+  private List<Metric> metrics;
+
+  // Default constructor
+  public MetricGroup() {
+  }
+
+  // Constructor without id
+  public MetricGroup(String name, List<Metric> metrics) {
+    this(null, name, metrics);
+  }
+
+  // Full constructor
+  public MetricGroup(Integer id, String name, List<Metric> metrics) {
+    this.id = id;
+    this.name = name;
+    this.metrics = metrics;
+  }
 
   public Integer getId() {
     return id;
@@ -23,12 +39,21 @@ public class MetricGroup {
     this.name = name;
   }
 
-  public List<String> getMetrics() {
+  public List<Metric> getMetrics() {
     return metrics;
   }
 
-  public void setMetrics(List<String> metrics) {
+  public void setMetrics(List<Metric> metrics) {
     this.metrics = metrics;
+  }
+
+  @Override
+  public String toString() {
+    return "MetricGroup{" +
+      "id=" + id +
+      ", name='" + name + '\'' +
+      ", metrics=" + metrics +
+      '}';
   }
 }
 

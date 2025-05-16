@@ -1,8 +1,9 @@
 package com.motadata.nms.datastore;
 
+import com.motadata.nms.commons.JsonPojoMapper;
 import com.motadata.nms.datastore.dao.*;
 import com.motadata.nms.datastore.utils.ErrorHandler;
-import com.motadata.nms.models.CredentialProfile;
+import com.motadata.nms.models.credential.CredentialProfile;
 import com.motadata.nms.models.DeviceType;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.json.JsonObject;
@@ -67,7 +68,7 @@ public class DatabaseVerticle extends AbstractVerticle {
     vertx.eventBus().consumer(DEVICE_TYPE_SAVE.name())
       .handler(deviceTypeMsg -> {
 
-        DeviceType deviceType = DeviceType.fromJson((JsonObject) deviceTypeMsg.body());
+        DeviceType deviceType = JsonPojoMapper.map((JsonObject)deviceTypeMsg.body(), DeviceType.class);
         deviceTypeDAO.save(deviceType)
           .onSuccess(deviceTypeMsg::reply)
           .onFailure(err -> ErrorHandler.replyFailure(deviceTypeMsg, err));

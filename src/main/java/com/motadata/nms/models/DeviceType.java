@@ -1,25 +1,44 @@
 package com.motadata.nms.models;
 
-import io.vertx.core.json.JsonObject;
+public class DeviceType {
+  private Integer id;
+  private String type;
 
-public record DeviceType (Integer id, String type, JsonObject metadata){
-
-  public DeviceType ( String type, JsonObject metadata) {
-    this(null , type, metadata);
+  public DeviceType() {
+    // Default constructor
   }
 
-  public JsonObject toJson() {
-    return new JsonObject()
-      .put("id", id)
-      .put("type", type)
-      .put("metadata", metadata);
+  public DeviceType(String type) {
+    this(null, type);
   }
 
-  public static DeviceType fromJson(JsonObject json) {
-    return new DeviceType(
-      json.getString("type"),
-      json.getJsonObject("metadata")
-    );
+  public DeviceType(Integer id, String type) {
+    this.id = id;
+    this.type = type;
+  }
+
+  public Integer getId() {
+    return id;
+  }
+
+  public void setId(Integer id) {
+    this.id = id;
+  }
+
+  public String getType() {
+    return type;
+  }
+
+  public void setType(String type) {
+    this.type = type;
+  }
+
+  @Override
+  public String toString() {
+    return "DeviceType{" +
+      "id=" + id +
+      ", type='" + type + '\'' +
+      '}';
   }
 }
 

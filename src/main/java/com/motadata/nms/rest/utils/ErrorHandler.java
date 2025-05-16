@@ -35,7 +35,9 @@ public class ErrorHandler {
         .encodePrettily());
   }
 
-  private static NMSException mapToNMSException(Throwable err) {
+  private static NMSException
+
+  mapToNMSException(Throwable err) {
     // Customize known exception mappings here
     if (err instanceof NMSException appEx) {
       return appEx;

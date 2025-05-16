@@ -1,8 +1,8 @@
 package com.motadata.nms.datastore.dao;
 
 import com.motadata.nms.commons.NMSException;
-import com.motadata.nms.datastore.utils.RowMapper;
-import com.motadata.nms.models.CredentialProfile;
+import com.motadata.nms.commons.RowMapper;
+import com.motadata.nms.models.credential.CredentialProfile;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;

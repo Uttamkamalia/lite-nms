@@ -35,7 +35,7 @@ public class NMSException extends RuntimeException {
     return new NMSException(ErrorCodes.INTERNAL_ERROR, message, cause);
   }
 
-  public static NMSException badRequest(String message) {
+  public static NMSException badRequest(String message, IllegalArgumentException e) {
     return new NMSException(ErrorCodes.BAD_REQUEST, message);
   }
 

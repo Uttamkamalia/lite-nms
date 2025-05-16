@@ -1,10 +1,8 @@
 package com.motadata.nms.datastore.dao;
 
 import com.motadata.nms.commons.NMSException;
-import com.motadata.nms.datastore.utils.RowMapper;
+import com.motadata.nms.commons.RowMapper;
 import com.motadata.nms.models.DeviceType;
-import io.netty.util.concurrent.FailedFuture;
-import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.sqlclient.Pool;
@@ -12,9 +10,6 @@ import io.vertx.sqlclient.SqlClient;
 import io.vertx.sqlclient.Tuple;
 import io.vertx.core.Future;
 import io.vertx.sqlclient.Row;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class DeviceTypeDAO {
 
@@ -26,13 +21,12 @@ public class DeviceTypeDAO {
 
   // Create
   public Future<Integer> save(DeviceType deviceType) {
-    String query = "INSERT INTO motadata.device_catalog (type, metadata) VALUES ($1, $2)";
+    String query = "INSERT INTO motadata.device_catalog (type) VALUES ($1, $2)";
     return pool.preparedQuery(query)
-      .execute(Tuple.of(deviceType.type(), deviceType.metadata()))
-      .map(v -> deviceType.id())
+      .execute(Tuple.of(deviceType.getType()))
+      .map(v -> deviceType.getId())
       .recover(err -> Future.failedFuture(NMSException.internal( "Database Error", err)));
       }
-
 
   public Future<JsonObject> get(Integer id) {
     String query = "SELECT * FROM motadata.device_catalog WHERE id = $1";
