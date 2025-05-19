@@ -1,56 +1,80 @@
-//package com.motadata.nms.rest.handlers;
-//
-//import com.motadata.nms.datastore.dao.DiscoveryProfileDAO;
-//import com.motadata.nms.models.DiscoveryProfile;
-//import io.vertx.core.json.JsonObject;
-//import io.vertx.ext.web.Router;
-//import io.vertx.ext.web.RoutingContext;
-//import io.vertx.sqlclient.Pool;
-//
-//public class DiscoveryProfileApiHandler {
-//  private final DiscoveryProfileDAO dao;
-//
-//  public DiscoveryProfileApiHandler(Pool pool) {
-//    this.dao = new DiscoveryProfileDAO(pool);
-//  }
-//
-//  public void registerRoutes(Router router) {
-//    router.post("/discovery-profile").handler(this::create);
-//    router.get("/discovery-profile/:id").handler(this::read);
-//    router.put("/discovery-profile/:id").handler(this::update);
-//    router.delete("/discovery-profile/:id").handler(this::delete);
-//  }
-//
-//  private void create(RoutingContext ctx) {
-//    JsonObject body = ctx.body().asJsonObject();
-//    dao.save(DiscoveryProfile.fromJson(body)).onSuccess(id ->
-//      ctx.response().putHeader("Content-Type", "application/json").end(new JsonObject().put("id", id).encode())
-//    ).onFailure(err ->
-//      ctx.response().setStatusCode(500).end(err.getMessage())
-//    );
-//  }
-//
-//  private void read(RoutingContext ctx) {
-//    int id = Integer.parseInt(ctx.pathParam("id"));
-//
-//  }
-//
-//  private void update(RoutingContext ctx) {
-//    int id = Integer.parseInt(ctx.pathParam("id"));
-//    JsonObject body = ctx.body().asJsonObject();
-//    dao.update(DiscoveryProfile.fromJson(body)).onSuccess(res ->
-//      ctx.response().setStatusCode(204).end()
-//    ).onFailure(err ->
-//      ctx.response().setStatusCode(500).end(err.getMessage())
-//    );
-//  }
-//
-//  private void delete(RoutingContext ctx) {
-//    int id = Integer.parseInt(ctx.pathParam("id"));
-//    dao.delete(id).onSuccess(res ->
-//      ctx.response().setStatusCode(204).end()
-//    ).onFailure(err ->
-//      ctx.response().setStatusCode(500).end(err.getMessage())
-//    );
-//  }
-//}
+package com.motadata.nms.rest.handlers;
+
+import com.motadata.nms.commons.VertxProvider;
+import com.motadata.nms.rest.utils.ErrorHandler;
+import io.vertx.core.Vertx;
+import io.vertx.core.json.Json;
+import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.Router;
+import io.vertx.ext.web.RoutingContext;
+
+import static com.motadata.nms.utils.EventBusChannels.*;
+import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
+import static io.netty.handler.codec.http.HttpHeaderValues.APPLICATION_JSON;
+
+public class DiscoveryProfileApiHandler {
+  private static final Vertx vertx = VertxProvider.getVertx();
+
+  public void registerRoutes(Router router) {
+    router.post("/discovery-profile").handler(this::createDiscoveryProfile);
+    router.get("/discovery-profile/:id").handler(this::getDiscoveryProfile);
+    router.get("/discovery-profile").handler(this::getAllDiscoveryProfiles);
+    router.delete("/discovery-profile/:id").handler(this::deleteDiscoveryProfile);
+  }
+
+  private void createDiscoveryProfile(RoutingContext ctx) {
+    JsonObject body = ctx.body().asJsonObject();
+    vertx.eventBus()
+      .request(DISCOVERY_PROFILE_SAVE.name(), body, reply -> {
+        if (reply.succeeded()) {
+          ctx.response()
+            .putHeader(CONTENT_TYPE, APPLICATION_JSON)
+            .setStatusCode(201)
+            .end(Json.encode(reply.result().body()));
+        } else {
+          ErrorHandler.respondError(ctx, reply.cause());
+        }
+      });
+  }
+
+  private void getDiscoveryProfile(RoutingContext ctx) {
+    int id = Integer.parseInt(ctx.pathParam("id"));
+    vertx.eventBus()
+      .request(DISCOVERY_PROFILE_GET.name(), id, reply -> {
+        if (reply.succeeded()) {
+          ctx.response()
+            .putHeader(CONTENT_TYPE, APPLICATION_JSON)
+            .end(reply.result().body().toString());
+        } else {
+          ErrorHandler.respondError(ctx, reply.cause());
+        }
+      });
+  }
+
+  private void getAllDiscoveryProfiles(RoutingContext ctx) {
+    vertx.eventBus()
+      .request(DISCOVERY_PROFILE_GET_ALL.name(), "", reply -> {
+        if (reply.succeeded()) {
+          ctx.response()
+            .putHeader(CONTENT_TYPE, APPLICATION_JSON)
+            .end(reply.result().body().toString());
+        } else {
+          ErrorHandler.respondError(ctx, reply.cause());
+        }
+      });
+  }
+
+  private void deleteDiscoveryProfile(RoutingContext ctx) {
+    int id = Integer.parseInt(ctx.pathParam("id"));
+    vertx.eventBus()
+      .request(DISCOVERY_PROFILE_DELETE.name(), id, reply -> {
+        if (reply.succeeded()) {
+          ctx.response()
+            .setStatusCode(204)
+            .end();
+        } else {
+          ErrorHandler.respondError(ctx, reply.cause());
+        }
+      });
+  }
+}

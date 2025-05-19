@@ -6,19 +6,24 @@ import java.util.List;
 
 public enum EventBusChannels {
 
-  // device-type actions
+  // Device Type Channels
   DEVICE_TYPE_SAVE("device.type.save"),
   DEVICE_TYPE_GET("device.type.get"),
   DEVICE_TYPE_GET_ALL("device.type.get.all"),
   DEVICE_TYPE_DELETE("device.type.delete"),
 
-  // Credential Profile Events
+  // Credential Profile Channels
   CREDENTIAL_PROFILE_SAVE("credential.profile.save"),
   CREDENTIAL_PROFILE_GET("credential.profile.get"),
   CREDENTIAL_PROFILE_GET_ALL("credential.profile.get.all"),
   CREDENTIAL_PROFILE_UPDATE("credential.profile.update"),
   CREDENTIAL_PROFILE_DELETE("credential.profile.delete"),
 
+  // Discovery Profile Channels
+  DISCOVERY_PROFILE_SAVE("discovery.profile.save"),
+  DISCOVERY_PROFILE_GET("discovery.profile.get"),
+  DISCOVERY_PROFILE_GET_ALL("discovery.profile.get.all"),
+  DISCOVERY_PROFILE_DELETE("discovery.profile.delete"),
 
 
     DISCOVERY_REQUEST("discovery.request"),     // polled by DiscoveryService to validate snmp connection and trigger discovery-job event

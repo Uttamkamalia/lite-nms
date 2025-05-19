@@ -61,6 +61,7 @@ public class DatabaseVerticle extends AbstractVerticle {
     initDao();
     registerDeviceTypeEventConsumers();
     registerCredentialProfileEventConsumers();
+    registerDiscoveryProfileEventConsumers();
   }
 
   private void registerDeviceTypeEventConsumers(){
@@ -137,6 +138,39 @@ public class DatabaseVerticle extends AbstractVerticle {
       .handler(msg -> {
         Integer id = (Integer) msg.body();
         credentialProfileDAO.delete(id)
+          .onSuccess(deletedId -> msg.reply(new JsonObject().put("id", deletedId)))
+          .onFailure(err -> ErrorHandler.replyFailure(msg, err));
+      });
+  }
+
+  private void registerDiscoveryProfileEventConsumers() {
+    vertx.eventBus().consumer(DISCOVERY_PROFILE_SAVE.name())
+      .handler(msg -> {
+        DiscoveryProfile profile = DiscoveryProfile.fromJson((JsonObject) msg.body());
+        discoveryProfileDAO.save(profile)
+          .onSuccess(savedId -> msg.reply(new JsonObject().put("id", savedId)))
+          .onFailure(err -> ErrorHandler.replyFailure(msg, err));
+      });
+
+    vertx.eventBus().consumer(DISCOVERY_PROFILE_GET.name())
+      .handler(msg -> {
+        Integer id = (Integer) msg.body();
+        discoveryProfileDAO.get(id)
+          .onSuccess(msg::reply)
+          .onFailure(err -> ErrorHandler.replyFailure(msg, err));
+      });
+
+    vertx.eventBus().consumer(DISCOVERY_PROFILE_GET_ALL.name())
+      .handler(msg -> {
+        discoveryProfileDAO.getAll()
+          .onSuccess(msg::reply)
+          .onFailure(err -> ErrorHandler.replyFailure(msg, err));
+      });
+
+    vertx.eventBus().consumer(DISCOVERY_PROFILE_DELETE.name())
+      .handler(msg -> {
+        Integer id = (Integer) msg.body();
+        discoveryProfileDAO.delete(id)
           .onSuccess(deletedId -> msg.reply(new JsonObject().put("id", deletedId)))
           .onFailure(err -> ErrorHandler.replyFailure(msg, err));
       });

@@ -1,10 +1,14 @@
 package com.motadata.nms.datastore.dao;
 
+import com.motadata.nms.commons.NMSException;
+import com.motadata.nms.commons.RowMapper;
 import com.motadata.nms.models.DiscoveryProfile;
-import io.vertx.sqlclient.Pool;
-import io.vertx.sqlclient.Tuple;
 import io.vertx.core.Future;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
+import io.vertx.sqlclient.Pool;
 import io.vertx.sqlclient.Row;
+import io.vertx.sqlclient.Tuple;
 
 public class DiscoveryProfileDAO {
 
@@ -15,44 +19,59 @@ public class DiscoveryProfileDAO {
   }
 
   // Create
-  public Future<Void> save(DiscoveryProfile discoveryProfile) {
-    String query = "INSERT INTO motadata.discovery_profile (target_ips, port, credentials_profile_id) VALUES ($1, $2, $3)";
+  public Future<Integer> save(DiscoveryProfile profile) {
+    String query = "INSERT INTO motadata.discovery_profile (target, credentials_profile_id) VALUES ($1, $2) RETURNING id";
     return pool.preparedQuery(query)
-      .execute(Tuple.of(discoveryProfile.targetIps(), discoveryProfile.port(), discoveryProfile.credentialsProfileId()))
-      .mapEmpty();
+      .execute(Tuple.of(profile.getTarget(), profile.getCredentialsProfileId()))
+      .map(rs -> {
+        if (rs.iterator().hasNext()) {
+          return rs.iterator().next().getInteger("id");
+        }
+        return null;
+      })
+      .recover(err -> Future.failedFuture(NMSException.internal("Database Error", err)));
   }
 
-  // Read
-  public Future<DiscoveryProfile> get(Integer id) {
+  // Read single
+  public Future<JsonObject> get(Integer id) {
     String query = "SELECT * FROM motadata.discovery_profile WHERE id = $1";
-
-    return pool
-      .preparedQuery(query)
+    return pool.preparedQuery(query)
       .execute(Tuple.of(id))
-      .map(rowSet -> {
+      .compose(rowSet -> {
+        if (rowSet == null || !rowSet.iterator().hasNext()) {
+          return Future.failedFuture(NMSException.notFound("Discovery Profile not found"));
+        }
         Row row = rowSet.iterator().next();
-
-        return new DiscoveryProfile(row.getInteger("id"),
-          row.getJsonObject("target_ips"),
-          row.getInteger("port"),
-          row.getInteger("credentials_profile_id"));
+        return Future.succeededFuture(RowMapper.mapRowToJson(row));
+      })
+      .recover(err -> {
+        if (err instanceof NMSException) {
+          return Future.failedFuture(err);
+        }
+        return Future.failedFuture(NMSException.internal("Database Error", err));
       });
   }
 
-  // Update
-  public Future<Void> update(DiscoveryProfile discoveryProfile) {
-    String query = "UPDATE motadata.discovery_profile SET target_ips = $1, port = $2, credentials_profile_id = $3 WHERE id = $4";
+  // Read all
+  public Future<JsonArray> getAll() {
+    String query = "SELECT * FROM motadata.discovery_profile";
     return pool.preparedQuery(query)
-      .execute(Tuple.of(discoveryProfile.targetIps(), discoveryProfile.port(), discoveryProfile.credentialsProfileId(), discoveryProfile.id()))
-      .mapEmpty();
+      .execute()
+      .map(rs -> {
+        JsonArray result = new JsonArray();
+        rs.forEach(row -> result.add(RowMapper.mapRowToJson(row)));
+        return result;
+      })
+      .recover(err -> Future.failedFuture(NMSException.internal("Database Error", err)));
   }
 
   // Delete
-  public Future<Void> delete(Integer id) {
+  public Future<Integer> delete(Integer id) {
     String query = "DELETE FROM motadata.discovery_profile WHERE id = $1";
     return pool.preparedQuery(query)
       .execute(Tuple.of(id))
-      .mapEmpty();
+      .map(v -> id)
+      .recover(err -> Future.failedFuture(NMSException.internal("Database Error", err)));
   }
 }
 

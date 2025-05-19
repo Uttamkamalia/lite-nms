@@ -7,11 +7,21 @@ CREATE TABLE public.clients (
 
 INSERT INTO public.clients (id, description) VALUES ("motadata", "sample client");
 
-CREATE TABLE motadata.device_catalog (                   -- (snmp, linux)
+CREATE TABLE motadata.device_catalog (
     id SERIAL PRIMARY KEY,
-    type TEXT,
-    metadata JSONB
+    type TEXT NOT NULL,
+    default_protocol TEXT NOT NULL,
+    default_port INTEGER NOT NULL,
+    metadata JSONB DEFAULT '{}'::jsonb
 );
+
+-- Insert some common device types
+INSERT INTO motadata.device_catalog (type, default_protocol, default_port, metadata)
+VALUES ('NETWORK_DEVICE', 'SNMP', 161, '{"description": "Generic network device"}'::jsonb);
+
+INSERT INTO motadata.device_catalog (type, default_protocol, default_port, metadata)
+VALUES ('LINUX', 'SSH', 22, '{"description": "Linux server or workstation"}'::jsonb);
+
 
 CREATE TABLE motadata.metric_group (
     id SERIAL PRIMARY KEY,
@@ -23,14 +33,14 @@ CREATE TABLE motadata.credential_profile (
     id SERIAL PRIMARY KEY,
     name TEXT,
     device_type INT REFERENCES device_catalog(id),
-    credentials JSONB                                    -- {"version": "v2c", "community":"public"}
+    credentials JSONB
 );
 
 CREATE TABLE motadata.discovery_profile (
     id SERIAL PRIMARY KEY,
-    target_ips JSONB                                     -- {"ip":"localhost", "low_limit":"192.168.10.100", "high_limit":"192.168.10.500"}
-    port INT,
+    target TEXT
     credentials_profile_id INT credential_profile(id),
+    created_at TIMESTAMP DEFAULT now()
 )
 
 // --status for each discovery -> table
