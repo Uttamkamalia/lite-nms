@@ -1,5 +1,6 @@
-package com.motadata.nms.discovery;
+package com.motadata.nms.discovery.job;
 
+import com.motadata.nms.discovery.context.DiscoveryContext;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonObject;
@@ -26,7 +27,7 @@ public class DiscoveryJobProducerVerticle extends AbstractVerticle {
         List<String> batch = ips.subList(i, end);
 
         batch.forEach(ip -> {
-          DiscoveryJob job = new DiscoveryJob(ip, context.getPort(), context.getCredentialProfileId(), context.getCredentialProfileId());
+          DiscoveryJob job = new DiscoveryJob(ip, context.getPort(), context.getCredentialProfile(), context.getCredentialProfile());
           vertx.eventBus().publish(DISCOVERY_JOB_CHANNEL, job.toJson());
         });
       }

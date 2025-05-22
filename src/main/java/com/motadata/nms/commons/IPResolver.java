@@ -69,4 +69,33 @@ public class IPResolver {
       ip & 0xFF
     );
   }
+
+  /**
+   * Check if a string is a valid IP address
+   * @param ip The string to check
+   * @return True if the string is a valid IP address, false otherwise
+   */
+  public static boolean isValidIp(String ip) {
+    if (ip == null || ip.isEmpty()) {
+      return false;
+    }
+
+    try {
+      String[] parts = ip.split("\\.");
+      if (parts.length != 4) {
+        return false;
+      }
+
+      for (String part : parts) {
+        int value = Integer.parseInt(part);
+        if (value < 0 || value > 255) {
+          return false;
+        }
+      }
+
+      return true;
+    } catch (NumberFormatException e) {
+      return false;
+    }
+  }
 }

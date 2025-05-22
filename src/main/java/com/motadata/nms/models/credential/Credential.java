@@ -15,6 +15,7 @@ public abstract class Credential {
     return type;
   }
 
+
   public void setType(Protocol type) {
     this.type = type;
   }

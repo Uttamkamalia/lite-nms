@@ -1,4 +1,4 @@
-package com.motadata.nms.discovery;
+package com.motadata.nms.discovery.job;
 
 import com.motadata.nms.models.ProvisionedDevice;
 import io.vertx.core.AbstractVerticle;

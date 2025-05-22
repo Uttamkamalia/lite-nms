@@ -1,63 +1,52 @@
 package com.motadata.nms.discovery;
 
+import com.motadata.nms.commons.VertxProvider;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 
+import static com.motadata.nms.utils.EventBusChannels.DISCOVERY_TRIGGER;
 
 public class DiscoveryService {
+  private static final Logger logger = LoggerFactory.getLogger(DiscoveryService.class);
   private final Vertx vertx;
+
+  public DiscoveryService() {
+    this.vertx = VertxProvider.getVertx();
+  }
 
   public DiscoveryService(Vertx vertx) {
     this.vertx = vertx;
   }
 
-  public Future<String> discoverDevices(String discoveryPayload) {
-    Promise<String> promise = Promise.promise();
-    JsonObject json = new JsonObject(discoveryPayload);
+  /**
+   * Trigger the discovery process for a discovery profile
+   * @param discoveryProfileId The ID of the discovery profile to use
+   * @return A Future containing the result of the discovery process
+   */
+  public Future<JsonObject> discoverDevices(Integer discoveryProfileId) {
+    Promise<JsonObject> promise = Promise.promise();
 
-    String ip = json.getString("ip");
-    String protocol = json.getString("protocol");
-    String snmpCommunity = json.getString("snmp_community", "public");
-    String sshUser = json.getString("ssh_user");
-    String sshPassword = json.getString("ssh_password");
+    if (discoveryProfileId == null) {
+      return Future.failedFuture("Discovery Profile ID cannot be null");
+    }
 
+    logger.info("Initiating discovery for profile ID: " + discoveryProfileId);
 
-
-    vertx.executeBlocking(future -> {
-      try {
-        if ("snmp".equalsIgnoreCase(protocol)) {
-          JsonObject discoveryObj = new JsonObject();
-
-          discoveryObj.put("ip_address", ip);
-          discoveryObj.put("hostname", ip);
-          discoveryObj.put("os", "routerOs");
-          discoveryObj.put("device_type", "router");
-          discoveryObj.put("discovery_id", 123);
-
-          vertx.eventBus().request("db.saveDiscovery", discoveryObj);
-
-        } else if ("ssh".equalsIgnoreCase(protocol)) {
-
-          System.out.println("SSH Response: ");
-
-        } else {
-          throw new IllegalArgumentException("Unsupported protocol: " + protocol);
-        }
-        future.complete();
-      } catch (Exception e) {
-        future.fail(e);
-      }
-    }, res -> {
-      if (res.succeeded()) {
-        promise.complete(ip);
+    // Send the discovery trigger message to the DiscoveryVerticle
+    vertx.eventBus().request(DISCOVERY_TRIGGER.name(), discoveryProfileId, reply -> {
+      if (reply.succeeded()) {
+        logger.info("Discovery successfully initiated for profile ID: " + discoveryProfileId);
+        promise.complete((JsonObject) reply.result().body());
       } else {
-        promise.fail(res.cause());
+        logger.error("Failed to initiate discovery: " + reply.cause().getMessage());
+        promise.fail(reply.cause());
       }
     });
 
     return promise.future();
   }
 }
-

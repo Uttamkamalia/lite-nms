@@ -47,18 +47,13 @@ public class DeviceType {
 
   // Enum for protocols
   public enum Protocol {
-    SNMP("SNMP", 161),
-    SSH("SSH", 22),
-    TELNET("TELNET", 23),
-    HTTP("HTTP", 80),
-    HTTPS("HTTPS", 443),
-    WMI("WMI", 135),
-    IPMI("IPMI", 623),
-    ICMP("ICMP", -1),  // ICMP doesn't use ports in the same way
-    UNKNOWN("UNKNOWN", 0);
+    SNMP("SNMP", 161, "snmp-plugin.go"),
+    SSH("SSH", 22, "ssh-plugin.go"),
+    UNKNOWN("UNKNOWN", 0, "default-plugin.go");
 
     private final String value;
     private final int defaultPort;
+    private final String pluginName;
     private static final Map<String, Protocol> lookup = new HashMap<>();
 
     static {
@@ -67,17 +62,22 @@ public class DeviceType {
       }
     }
 
-    Protocol(String value, int defaultPort) {
+    Protocol(String value, int defaultPort, String pluginName) {
       this.value = value;
       this.defaultPort = defaultPort;
+      this.pluginName = pluginName;
     }
 
     public String getValue() {
       return value;
     }
 
-    public int getDefaultPort() {
+    public Integer getDefaultPort() {
       return defaultPort;
+    }
+
+    public String getPluginName() {
+      return pluginName;
     }
 
     @Override

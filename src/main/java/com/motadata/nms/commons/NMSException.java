@@ -39,6 +39,10 @@ public class NMSException extends RuntimeException {
     return new NMSException(ErrorCodes.BAD_REQUEST, message);
   }
 
+  public static NMSException badRequest(String message) {
+    return new NMSException(ErrorCodes.BAD_REQUEST, message);
+  }
+
   public static NMSException conflict(String message) {
     return new NMSException(ErrorCodes.CONFLICT, message);
   }

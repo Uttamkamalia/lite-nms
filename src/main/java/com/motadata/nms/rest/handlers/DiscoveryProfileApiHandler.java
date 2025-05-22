@@ -17,6 +17,7 @@ public class DiscoveryProfileApiHandler {
 
   public void registerRoutes(Router router) {
     router.post("/discovery-profile").handler(this::createDiscoveryProfile);
+    router.post("/discovery-profile/trigger").handler(this::triggerDiscovery);
     router.get("/discovery-profile/:id").handler(this::getDiscoveryProfile);
     router.get("/discovery-profile").handler(this::getAllDiscoveryProfiles);
     router.delete("/discovery-profile/:id").handler(this::deleteDiscoveryProfile);
@@ -74,6 +75,21 @@ public class DiscoveryProfileApiHandler {
             .end();
         } else {
           ErrorHandler.respondError(ctx, reply.cause());
+        }
+      });
+  }
+
+  private void triggerDiscovery(RoutingContext ctx) {
+    JsonObject body = ctx.body().asJsonObject();
+    Integer discoveryProfileId = body.getInteger("discoveryProfileId");
+    vertx.eventBus()
+      .request(DISCOVERY_TRIGGER.name(), discoveryProfileId, discoverySummaryReply -> {
+        if (discoverySummaryReply.succeeded()) {
+          ctx.response()
+            .putHeader(CONTENT_TYPE, APPLICATION_JSON)
+            .end(discoverySummaryReply.result().body().toString());
+        } else {
+          ErrorHandler.respondError(ctx, discoverySummaryReply.cause());
         }
       });
   }

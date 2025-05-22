@@ -10,9 +10,21 @@
     "interval_ms": 60000
   },
   "discovery": {
-    "interval_ms": 300000
+    "interval_ms": 300000,
+    "batch_size": 10
   },
   "http": {
     "port": 10200
+  },
+  "security": {
+    "encryption": {
+      "masterKey": "MotadataNMSSecureKey2023",
+      "algorithm": "AES/CBC/PKCS5Padding",
+      "secretKeyAlgorithm": "PBKDF2WithHmacSHA256",
+      "keyLength": 256,
+      "iterationCount": 65536,
+      "ivLength": 16,
+      "saltLength": 16
+    }
   }
 }

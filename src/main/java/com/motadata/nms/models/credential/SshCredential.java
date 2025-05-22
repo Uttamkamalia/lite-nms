@@ -1,14 +1,21 @@
 package com.motadata.nms.models.credential;
 
+import com.motadata.nms.models.DeviceType;
+import com.motadata.nms.security.EncryptionServiceProvider;
 import io.vertx.core.json.JsonObject;
 
 public class SshCredential extends Credential{
   private String username;
   private String password;
 
+  public SshCredential(){
+    super(DeviceType.Protocol.SSH);
+  }
+
   public SshCredential(String username, String password) {
+    super(DeviceType.Protocol.SSH);
     this.username = username;
-    this.password = password;
+    this.password = EncryptionServiceProvider.getService().encrypt(password);
   }
 
   public static SshCredential fromJson(JsonObject json) {
@@ -33,8 +40,6 @@ public class SshCredential extends Credential{
     }
 
     credential.setPassword(password);
-    credential.setPrivateKey(privateKey);
-    credential.setPort(json.getInteger("port", DEFAULT_PORT));
 
     return credential;
   }
@@ -58,5 +63,13 @@ public class SshCredential extends Credential{
   @Override
   public String toString() {
     return super.toString();
+  }
+
+  @Override
+  public JsonObject toJson() {
+    return new JsonObject()
+      .put("type", getType().getValue())
+      .put("username", username)
+      .put("password", password);
   }
 }

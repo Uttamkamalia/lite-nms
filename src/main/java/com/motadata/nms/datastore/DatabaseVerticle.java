@@ -3,6 +3,7 @@ package com.motadata.nms.datastore;
 import com.motadata.nms.commons.JsonPojoMapper;
 import com.motadata.nms.datastore.dao.*;
 import com.motadata.nms.datastore.utils.ErrorHandler;
+import com.motadata.nms.models.DiscoveryProfile;
 import com.motadata.nms.models.credential.CredentialProfile;
 import com.motadata.nms.models.DeviceType;
 import io.vertx.core.AbstractVerticle;
@@ -14,7 +15,7 @@ import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.*;
 
 
-import static com.motadata.nms.datastore.utils.Constants.*;
+import static com.motadata.nms.datastore.utils.ConfigKeys.*;
 import static com.motadata.nms.utils.EventBusChannels.*;
 
 
@@ -31,13 +32,13 @@ public class DatabaseVerticle extends AbstractVerticle {
 
 
   private void initPool(){
-    JsonObject dbConfig = config().getJsonObject(CONFIG_DATASTORE);
+    JsonObject dbConfig = config().getJsonObject(DATASTORE);
     PgConnectOptions connectOptions = new PgConnectOptions()
-      .setPort(dbConfig.getInteger(CONFIG_DATASTORE_PORT))
-      .setHost(dbConfig.getString(CONFIG_DATASTORE_HOST))
-      .setDatabase(dbConfig.getString(CONFIG_DATASTORE_NAME))
-      .setUser(dbConfig.getString(CONFIG_DATASTORE_USER))
-      .setPassword(dbConfig.getString(CONFIG_DATASTORE_PASSWORD));
+      .setPort(dbConfig.getInteger(DATASTORE_PORT))
+      .setHost(dbConfig.getString(DATASTORE_HOST))
+      .setDatabase(dbConfig.getString(DATASTORE_NAME))
+      .setUser(dbConfig.getString(DATASTORE_USER))
+      .setPassword(dbConfig.getString(DATASTORE_PASSWORD));
 
     PoolOptions poolOptions = new PoolOptions().setMaxSize(5);
     this.pool = PgPool.pool(vertx,  connectOptions, poolOptions);

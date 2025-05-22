@@ -1,9 +1,6 @@
 package com.motadata.nms.utils;
 
 
-import java.util.List;
-
-
 public enum EventBusChannels {
 
   // Device Type Channels
@@ -24,23 +21,15 @@ public enum EventBusChannels {
   DISCOVERY_PROFILE_GET("discovery.profile.get"),
   DISCOVERY_PROFILE_GET_ALL("discovery.profile.get.all"),
   DISCOVERY_PROFILE_DELETE("discovery.profile.delete"),
+  DISCOVERY_TRIGGER("discovery.trigger"),
+  DISCOVERY_CONTEXT_BUILD("discovery.context.build"),
+  DISCOVERY_JOBS_SNMP("discovery.jobs.snmp"),
+  DISCOVERY_JOBS_SSH("discovery.jobs.ssh"),
 
-
-    DISCOVERY_REQUEST("discovery.request"),     // polled by DiscoveryService to validate snmp connection and trigger discovery-job event
-    DISCOVERY_JOB("discovery.jobs"),            // polled by Collector , snmp connect and save event
-    DISCOVERED_DEVICE("discovery.provisioned"),        // polled by DiscoveryDaoVerticle to save and send discovery-response
-    DISCOVERY_RESPONSE("discovery.response"),  //  DiscoveryDaoVerticle sends response which is received by Router
-
-    METRIC_REQUEST("metric.config.save"), // polled by MetricService to verify and save metric-info
-
-    METRIC_POLL_START("metric.polling.start"),    // verifies metric-id from db and calls Polling service and creates jobs
-    METRIC_POLL_JOBS("metric.polling.jobs"),    // polled by collector, snmp-get
-    METRIC_POLL_START_VERIFIED("metric.polling.record"), // polled by DbService to record metric
-
-    METRIC_POLL_STOP("metric.polling.stop");   // maintain a shared-map for all the ongoing metric-config-id
-
-
-
+  // Encryption Channels
+  ENCRYPT_PASSWORD("encryption.password"),
+  DECRYPT_PASSWORD("encryption.password.decrypt"),
+  IS_ENCRYPTED("encryption.password.is.encrypted");
 
     private static String SEPERATOR = ".";
     private String name;
