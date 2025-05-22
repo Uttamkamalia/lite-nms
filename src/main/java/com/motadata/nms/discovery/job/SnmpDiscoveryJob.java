@@ -10,20 +10,18 @@ public class SnmpDiscoveryJob extends DiscoveryJob {
   // SNMP connection details
   private String version;
   private String community;
-  private String securityName;
 
   public SnmpDiscoveryJob(List<String> ips, Integer port, CredentialProfile credentialProfile, Integer discoveryProfileId) {
     super(ips, port, credentialProfile.getId(), discoveryProfileId);
-    extractSnmpDetails(credentialProfile);
+    extractConnectionDetails(credentialProfile);
   }
 
-  private void extractSnmpDetails(CredentialProfile credentialProfile) {
+  public void extractConnectionDetails(CredentialProfile credentialProfile) {
     if (credentialProfile != null && credentialProfile.isSnmpCredential()) {
       SnmpCredential snmpCredential = credentialProfile.getSnmpCredential();
       if (snmpCredential != null) {
         this.version = snmpCredential.getVersion();
         this.community = snmpCredential.getCommunity();
-        this.securityName = snmpCredential.getSecurityName();
       }
     }
   }
@@ -45,14 +43,6 @@ public class SnmpDiscoveryJob extends DiscoveryJob {
     this.community = community;
   }
 
-  public String getSecurityName() {
-    return securityName;
-  }
-
-  public void setSecurityName(String securityName) {
-    this.securityName = securityName;
-  }
-
   @Override
   public String toString() {
     return "SnmpDiscoveryJob{" +
@@ -62,7 +52,6 @@ public class SnmpDiscoveryJob extends DiscoveryJob {
       ", discoveryProfileId=" + getDiscoveryProfileId() +
       ", version='" + version + '\'' +
       ", community='" + (community != null ? "***" : "null") + '\'' +
-      ", securityName='" + securityName + '\'' +
       '}';
   }
 }

@@ -22,12 +22,13 @@ public class CredentialProfileDAO {
   public Future<String> save(CredentialProfile profile) {
     String query = "INSERT INTO motadata.credential_profile (name, device_type, credentials) VALUES ($1, $2, $3)";
     return pool.preparedQuery(query)
-      .execute(Tuple.of(profile.name(), profile.deviceTypeId(), profile.credentials()))
+      .execute(Tuple.of(profile.getName(), profile.getDeviceTypeId(), profile.getCredential()))
       .map(v -> "created")
       .recover(err -> Future.failedFuture(NMSException.internal("Database Error", err)));
   }
 
   // Read single
+  // TODO decrypt password while returning response
   public Future<JsonObject> get(Integer id) {
     String query = "SELECT * FROM motadata.credential_profile WHERE id = $1";
     return pool.preparedQuery(query)
@@ -59,8 +60,8 @@ public class CredentialProfileDAO {
   public Future<Integer> update(CredentialProfile profile) {
     String query = "UPDATE motadata.credential_profile SET name = $1, device_type = $2, credentials = $3 WHERE id = $4";
     return pool.preparedQuery(query)
-      .execute(Tuple.of(profile.name(), profile.deviceTypeId(), profile.credentials(), profile.id()))
-      .map(v -> profile.id())
+      .execute(Tuple.of(profile.getName(), profile.getDeviceTypeId(), profile.getCredential(), profile.getId()))
+      .map(v -> profile.getId())
       .recover(err -> Future.failedFuture(NMSException.internal("Database Error", err)));
   }
 
