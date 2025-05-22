@@ -3,7 +3,10 @@ package com.motadata.nms;
 
 import com.motadata.nms.commons.VertxProvider;
 import com.motadata.nms.datastore.DatabaseVerticle;
+import com.motadata.nms.discovery.DiscoveryResultCollectorVerticle;
 import com.motadata.nms.discovery.DiscoveryVerticle;
+import com.motadata.nms.discovery.context.DiscoveryContextBuilderVerticle;
+import com.motadata.nms.discovery.job.DiscoveryWorkerVerticle;
 import io.vertx.config.ConfigRetriever;
 import io.vertx.config.ConfigRetrieverOptions;
 import io.vertx.config.ConfigStoreOptions;
@@ -40,8 +43,7 @@ public class MainVerticle extends AbstractVerticle {
       // Store config in shared data for access by other components
       vertx.sharedData().getLocalMap("config").put("config", config);
 
-      // Initialize encryption settings
-      com.motadata.nms.commons.security.CredentialEncryption.initialize();
+      // TODO initial security- ecryption servixex
     });
   }
 
@@ -50,6 +52,7 @@ public class MainVerticle extends AbstractVerticle {
     logger.info("Configuration via json-obj" + config.getJsonObject("http").getInteger("port"));
 
     // Deploy options for worker verticles
+    // TODO worker froup: db, discovery-context-builder, discovery-job-worker
     DeploymentOptions workerOptions = new DeploymentOptions()
       .setConfig(config)
       .setWorker(true)
@@ -61,8 +64,6 @@ public class MainVerticle extends AbstractVerticle {
       .setConfig(config);
 
     return Future.succeededFuture()
-      // Deploy the encryption worker first so it's available for other components
-      .compose(v -> vertx.deployVerticle(new com.motadata.nms.security.EncryptionWorkerVerticle(), workerOptions))
       .compose(v -> vertx.deployVerticle(new DatabaseVerticle(), workerOptions))
       // Deploy the context builder as a worker verticle
       .compose(depId -> vertx.deployVerticle(new DiscoveryContextBuilderVerticle(), workerOptions))
@@ -70,6 +71,8 @@ public class MainVerticle extends AbstractVerticle {
       .compose(depId -> vertx.deployVerticle(new DiscoveryVerticle(), standardOptions))
       // Deploy the job worker as a worker verticle
       .compose(depId -> vertx.deployVerticle(new DiscoveryJobWorkerVerticle(), workerOptions))
+      // Deploy our new discovery worker verticle
+      .compose(depId -> vertx.deployVerticle(new DiscoveryWorkerVerticle(), workerOptions))
       // Deploy the result collector as a standard verticle
       .compose(depId -> vertx.deployVerticle(new DiscoveryResultCollectorVerticle(), standardOptions))
       .compose(depId -> vertx.deployVerticle(new ApiVerticle(), standardOptions));

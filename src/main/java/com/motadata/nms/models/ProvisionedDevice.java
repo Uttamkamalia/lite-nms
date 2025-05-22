@@ -1,62 +1,70 @@
 package com.motadata.nms.models;
 
+import io.vertx.core.json.JsonObject;
+
 public class ProvisionedDevice {
   private Integer id;
-  private String ip;
+  private String ipAddress;
   private Integer port;
   private Integer discoveryProfileId;
-  private Integer credentialsProfileId;
+  private Integer credentialProfileId;
   private String hostname;
   private String os;
-  private String deviceType;
+  private String protocol;
   private String status;
-  private String discoveredAt;
+  private String discoveryTime;
 
-  // Default constructor
   public ProvisionedDevice() {
   }
 
-  // Constructor without id (e.g. for inserts)
-  public ProvisionedDevice(
-    String ip,
-    Integer port,
-    Integer discoveryProfileId,
-    Integer credentialsProfileId,
-    String hostname,
-    String os,
-    String deviceType,
-    String status,
-    String discoveredAt
-  ) {
-    this(null, ip, port, discoveryProfileId, credentialsProfileId, hostname, os, deviceType, status, discoveredAt);
-  }
-
-  // Full constructor
-  public ProvisionedDevice(
-    Integer id,
-    String ip,
-    Integer port,
-    Integer discoveryProfileId,
-    Integer credentialsProfileId,
-    String hostname,
-    String os,
-    String deviceType,
-    String status,
-    String discoveredAt
-  ) {
-    this.id = id;
-    this.ip = ip;
+  public ProvisionedDevice(String ipAddress, Integer port, Integer discoveryProfileId,
+                          Integer credentialProfileId, String hostname, String os,
+                          String protocol, String status, String discoveryTime) {
+    this.ipAddress = ipAddress;
     this.port = port;
     this.discoveryProfileId = discoveryProfileId;
-    this.credentialsProfileId = credentialsProfileId;
+    this.credentialProfileId = credentialProfileId;
     this.hostname = hostname;
     this.os = os;
-    this.deviceType = deviceType;
+    this.protocol = protocol;
     this.status = status;
-    this.discoveredAt = discoveredAt;
+    this.discoveryTime = discoveryTime;
   }
 
-  // Getters and setters
+  public static ProvisionedDevice fromJson(JsonObject json) {
+    ProvisionedDevice device = new ProvisionedDevice();
+    device.setId(json.getInteger("id"));
+    device.setIpAddress(json.getString("ip_address"));
+    device.setPort(json.getInteger("port"));
+    device.setDiscoveryProfileId(json.getInteger("discovery_profile_id"));
+    device.setCredentialProfileId(json.getInteger("credential_profile_id"));
+    device.setHostname(json.getString("hostname"));
+    device.setOs(json.getString("os"));
+    device.setProtocol(json.getString("protocol"));
+    device.setStatus(json.getString("status"));
+    device.setDiscoveryTime(json.getString("discovery_time"));
+    return device;
+  }
+
+  public JsonObject toJson() {
+    JsonObject json = new JsonObject()
+      .put("ip_address", ipAddress)
+      .put("port", port)
+      .put("discovery_profile_id", discoveryProfileId)
+      .put("credential_profile_id", credentialProfileId)
+      .put("hostname", hostname)
+      .put("os", os)
+      .put("protocol", protocol)
+      .put("status", status)
+      .put("discovery_time", discoveryTime);
+
+    if (id != null) {
+      json.put("id", id);
+    }
+
+    return json;
+  }
+
   public Integer getId() {
     return id;
   }
@@ -65,12 +73,12 @@ public class ProvisionedDevice {
     this.id = id;
   }
 
-  public String getIp() {
-    return ip;
+  public String getIpAddress() {
+    return ipAddress;
   }
 
-  public void setIp(String ip) {
-    this.ip = ip;
+  public void setIpAddress(String ipAddress) {
+    this.ipAddress = ipAddress;
   }
 
   public Integer getPort() {
@@ -89,12 +97,12 @@ public class ProvisionedDevice {
     this.discoveryProfileId = discoveryProfileId;
   }
 
-  public Integer getCredentialsProfileId() {
-    return credentialsProfileId;
+  public Integer getCredentialProfileId() {
+    return credentialProfileId;
   }
 
-  public void setCredentialsProfileId(Integer credentialsProfileId) {
-    this.credentialsProfileId = credentialsProfileId;
+  public void setCredentialProfileId(Integer credentialProfileId) {
+    this.credentialProfileId = credentialProfileId;
   }
 
   public String getHostname() {
@@ -113,12 +121,12 @@ public class ProvisionedDevice {
     this.os = os;
   }
 
-  public String getDeviceType() {
-    return deviceType;
+  public String getProtocol() {
+    return protocol;
   }
 
-  public void setDeviceType(String deviceType) {
-    this.deviceType = deviceType;
+  public void setProtocol(String protocol) {
+    this.protocol = protocol;
   }
 
   public String getStatus() {
@@ -129,27 +137,27 @@ public class ProvisionedDevice {
     this.status = status;
   }
 
-  public String getDiscoveredAt() {
-    return discoveredAt;
+  public String getDiscoveryTime() {
+    return discoveryTime;
   }
 
-  public void setDiscoveredAt(String discoveredAt) {
-    this.discoveredAt = discoveredAt;
+  public void setDiscoveryTime(String discoveryTime) {
+    this.discoveryTime = discoveryTime;
   }
 
   @Override
   public String toString() {
     return "ProvisionedDevice{" +
       "id=" + id +
-      ", ip='" + ip + '\'' +
+      ", ipAddress='" + ipAddress + '\'' +
       ", port=" + port +
       ", discoveryProfileId=" + discoveryProfileId +
-      ", credentialsProfileId=" + credentialsProfileId +
+      ", credentialProfileId=" + credentialProfileId +
       ", hostname='" + hostname + '\'' +
       ", os='" + os + '\'' +
-      ", deviceType='" + deviceType + '\'' +
+      ", protocol='" + protocol + '\'' +
       ", status='" + status + '\'' +
-      ", discoveredAt='" + discoveredAt + '\'' +
+      ", discoveryTime='" + discoveryTime + '\'' +
       '}';
   }
 }

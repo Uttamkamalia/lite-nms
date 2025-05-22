@@ -27,7 +27,7 @@ public class DiscoveryVerticle extends AbstractVerticle {
 
   @Override
   public void start(Promise<Void> startPromise) {
-    batchSize = config().getInteger(DISCOVERY_BATCH_SIZE, 10);
+    batchSize = config().getInteger(DISCOVERY_BATCH_SIZE, 1);
 
     vertx.eventBus().consumer(DISCOVERY_TRIGGER.name(), message -> {
       Integer discoveryProfileId = (Integer) message.body();
