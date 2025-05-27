@@ -1,18 +1,28 @@
 package com.motadata.nms.rest.handlers;
 
+import com.motadata.nms.commons.RequestIdHandler;
 import com.motadata.nms.commons.VertxProvider;
+import com.motadata.nms.models.DiscoveryProfile;
+import com.motadata.nms.models.credential.CredentialProfile;
 import com.motadata.nms.rest.utils.ErrorHandler;
+import com.motadata.nms.rest.utils.RestUtils;
 import io.vertx.core.Vertx;
+import io.vertx.core.impl.logging.Logger;
+import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 
+import static com.motadata.nms.commons.RequestIdHandler.getRequestIdDeliveryOpts;
+import static com.motadata.nms.rest.utils.RestUtils.parseAndRespond;
 import static com.motadata.nms.utils.EventBusChannels.*;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
 import static io.netty.handler.codec.http.HttpHeaderValues.APPLICATION_JSON;
 
 public class DiscoveryProfileApiHandler {
+  private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(DiscoveryProfileApiHandler.class);
+  Logger logger = LoggerFactory.getLogger(DiscoveryProfileApiHandler.class);
   private static final Vertx vertx = VertxProvider.getVertx();
 
   public void registerRoutes(Router router) {
@@ -24,9 +34,11 @@ public class DiscoveryProfileApiHandler {
   }
 
   private void createDiscoveryProfile(RoutingContext ctx) {
-    JsonObject body = ctx.body().asJsonObject();
+    String requestId = ctx.get(RequestIdHandler.REQUEST_ID_KEY);
+    DiscoveryProfile discoveryProfile = parseAndRespond(ctx, DiscoveryProfile::fromJson);
+
     vertx.eventBus()
-      .request(DISCOVERY_PROFILE_SAVE.name(), body, reply -> {
+      .request(DISCOVERY_PROFILE_SAVE.name(), discoveryProfile, getRequestIdDeliveryOpts(requestId), reply -> {
         if (reply.succeeded()) {
           ctx.response()
             .putHeader(CONTENT_TYPE, APPLICATION_JSON)
@@ -39,9 +51,11 @@ public class DiscoveryProfileApiHandler {
   }
 
   private void getDiscoveryProfile(RoutingContext ctx) {
-    int id = Integer.parseInt(ctx.pathParam("id"));
+    String requestId = ctx.get(RequestIdHandler.REQUEST_ID_KEY);
+    Integer id = RestUtils.parseAndRespond(ctx, "id", Integer::parseInt, "Discovery-Profile ID cannot be null");
+
     vertx.eventBus()
-      .request(DISCOVERY_PROFILE_GET.name(), id, reply -> {
+      .request(DISCOVERY_PROFILE_GET.name(), id, getRequestIdDeliveryOpts(requestId), reply -> {
         if (reply.succeeded()) {
           ctx.response()
             .putHeader(CONTENT_TYPE, APPLICATION_JSON)
@@ -53,8 +67,10 @@ public class DiscoveryProfileApiHandler {
   }
 
   private void getAllDiscoveryProfiles(RoutingContext ctx) {
+    String requestId = ctx.get(RequestIdHandler.REQUEST_ID_KEY);
+
     vertx.eventBus()
-      .request(DISCOVERY_PROFILE_GET_ALL.name(), "", reply -> {
+      .request(DISCOVERY_PROFILE_GET_ALL.name(), "", getRequestIdDeliveryOpts(requestId), reply -> {
         if (reply.succeeded()) {
           ctx.response()
             .putHeader(CONTENT_TYPE, APPLICATION_JSON)
@@ -66,9 +82,11 @@ public class DiscoveryProfileApiHandler {
   }
 
   private void deleteDiscoveryProfile(RoutingContext ctx) {
-    int id = Integer.parseInt(ctx.pathParam("id"));
+    String requestId = ctx.get(RequestIdHandler.REQUEST_ID_KEY);
+    Integer id = RestUtils.parseAndRespond(ctx, "id", Integer::parseInt, "Discovery-Profile ID cannot be null");
+
     vertx.eventBus()
-      .request(DISCOVERY_PROFILE_DELETE.name(), id, reply -> {
+      .request(DISCOVERY_PROFILE_DELETE.name(), id, getRequestIdDeliveryOpts(requestId), reply -> {
         if (reply.succeeded()) {
           ctx.response()
             .setStatusCode(204)
@@ -80,17 +98,28 @@ public class DiscoveryProfileApiHandler {
   }
 
   private void triggerDiscovery(RoutingContext ctx) {
+    String requestId = ctx.get(RequestIdHandler.REQUEST_ID_KEY);
+
     JsonObject body = ctx.body().asJsonObject();
     Integer discoveryProfileId = body.getInteger("discoveryProfileId");
+    if (discoveryProfileId == null) {
+      ErrorHandler.respondError(ctx, new IllegalArgumentException("Discovery-Profile ID cannot be null"));
+      return;
+    }
+
     vertx.eventBus()
-      .request(DISCOVERY_TRIGGER.name(), discoveryProfileId, discoverySummaryReply -> {
-        if (discoverySummaryReply.succeeded()) {
+      .request(DISCOVERY_TRIGGER.name(), discoveryProfileId, getRequestIdDeliveryOpts(requestId), discoverySummaryReply -> {
+
+        vertx.eventBus().consumer(DISCOVERY_RESULT.withId(discoveryProfileId) , discoveryResultMsg -> {
+
+          JsonObject result = (JsonObject) discoveryResultMsg.body();
+          System.out.println("Final result: " + result.encodePrettily());
+          log.info("Final result: " + result.encodePrettily());
+
           ctx.response()
             .putHeader(CONTENT_TYPE, APPLICATION_JSON)
-            .end(discoverySummaryReply.result().body().toString());
-        } else {
-          ErrorHandler.respondError(ctx, discoverySummaryReply.cause());
-        }
+            .end(result.encodePrettily());
+        });
       });
   }
 }

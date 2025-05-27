@@ -189,27 +189,6 @@ public class DeviceType {
     return (T) this.metadata.getValue(key, null);
   }
 
-  // Common metadata setters for different device types
-  public DeviceType setOsVersion(String osVersion) {
-    return addMetadata("osVersion", osVersion);
-  }
-
-  public DeviceType setManufacturer(String manufacturer) {
-    return addMetadata("manufacturer", manufacturer);
-  }
-
-  public DeviceType setModel(String model) {
-    return addMetadata("model", model);
-  }
-
-  public DeviceType setFirmwareVersion(String firmwareVersion) {
-    return addMetadata("firmwareVersion", firmwareVersion);
-  }
-
-  public DeviceType setSnmpVersion(String snmpVersion) {
-    return addMetadata("snmpVersion", snmpVersion);
-  }
-
   // Conversion to JSON
   public JsonObject toJson() {
     JsonObject json = new JsonObject()
@@ -230,16 +209,49 @@ public class DeviceType {
 
   // Create from JSON
   public static DeviceType fromJson(JsonObject json) {
-    if (json == null) return null;
+    if (json == null) {
+      throw new IllegalArgumentException("DeviceType JSON cannot be null");
+    }
 
-    DeviceType deviceType = new DeviceType();
-    deviceType.setId(json.getInteger("id"));
-    deviceType.setType(Type.fromString(json.getString("type")));
-    deviceType.setDefaultProtocol(Protocol.fromString(json.getString("defaultProtocol")));
-    deviceType.setDefaultPort(json.getInteger("defaultPort"));
-    deviceType.setMetadata(json.getJsonObject("metadata"));
+      DeviceType deviceType = new DeviceType();
 
-    return deviceType;
+      // Validate and set type
+      String typeStr = json.getString("type");
+      if (typeStr == null || typeStr.isEmpty()) {
+        throw new IllegalArgumentException("Device type is required");
+      }
+      Type type = Type.fromString(typeStr);
+      if (type == Type.UNKNOWN && !typeStr.equalsIgnoreCase("UNKNOWN")) {
+        throw new IllegalArgumentException("Invalid device type: " + typeStr);
+      }
+      deviceType.setType(type);
+
+      // Validate and set protocol
+      String protocolStr = json.getString("default_protocol");
+      if (protocolStr == null || protocolStr.isEmpty()) {
+        throw new IllegalArgumentException("Default protocol is required");
+      }
+      Protocol protocol = Protocol.fromString(protocolStr);
+      if (protocol == Protocol.UNKNOWN && !protocolStr.equalsIgnoreCase("UNKNOWN")) {
+        throw new IllegalArgumentException("Invalid protocol: " + protocolStr);
+      }
+      deviceType.setDefaultProtocol(protocol);
+
+      // Set port if present, otherwise use protocol's default port
+      Integer port = json.getInteger("default_port");
+      if (port != null) {
+        deviceType.setDefaultPort(port);
+      } else {
+        deviceType.setDefaultPort(protocol.getDefaultPort());
+      }
+
+      // Set metadata if present
+      JsonObject metadata = json.getJsonObject("metadata");
+      if (metadata != null) {
+        deviceType.setMetadata(metadata);
+      }
+
+      return deviceType;
   }
 
   @Override
@@ -251,10 +263,5 @@ public class DeviceType {
       ", defaultPort=" + defaultPort +
       ", metadata=" + metadata +
       '}';
-  }
-
-  // Factory methods for common device types
-  public static DeviceType createLinuxServer() {
-    return new DeviceType(Type.LINUX, Protocol.SSH);
   }
 }

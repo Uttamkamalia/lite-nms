@@ -7,29 +7,22 @@ import com.motadata.nms.models.credential.CredentialProfile;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Factory class for creating discovery jobs based on discovery context
  */
 public class DiscoveryJobFactory {
 
-    /**
-     * Create a discovery job for a batch of IP addresses based on the discovery context
-     *
-     * @param ipBatch List of IP addresses for the job
-     * @param context The discovery context containing job parameters
-     * @return The appropriate discovery job instance (SnmpDiscoveryJob or SshDiscoveryJob)
-     * @throws NMSException if the credential type is not supported
-     */
-    public static DiscoveryJob create(List<String> ipBatch, DiscoveryContext context) {
-        if (ipBatch == null || ipBatch.isEmpty()) {
+    public static DiscoveryJob create(List<String> batch, DiscoveryContext context) {
+        if (batch == null || batch.isEmpty()) {
             throw NMSException.badRequest("IP address batch cannot be null or empty");
         }
-
         if (context == null) {
             throw NMSException.badRequest("Discovery context cannot be null");
         }
 
+        // TODO pas protocol as param so not repeated for each ip
         CredentialProfile credentialProfile = context.getCredentialProfile();
         if (credentialProfile == null) {
             throw NMSException.badRequest("Credential profile cannot be null");
@@ -47,7 +40,7 @@ public class DiscoveryJobFactory {
         switch (protocol) {
             case SNMP:
                 return new SnmpDiscoveryJob(
-                    ipBatch,
+                    batch,
                     context.getPort(),
                     credentialProfile,
                     context.getDiscoveryProfileId()
@@ -55,7 +48,7 @@ public class DiscoveryJobFactory {
 
             case SSH:
                 return new SshDiscoveryJob(
-                    ipBatch,
+                    batch,
                     context.getPort(),
                     credentialProfile,
                     context.getDiscoveryProfileId()
@@ -64,42 +57,5 @@ public class DiscoveryJobFactory {
             default:
                 throw NMSException.badRequest("Unsupported protocol: " + protocol.getValue());
         }
-    }
-
-    /**
-     * Create discovery jobs by batching IP addresses from the discovery context
-     *
-     * @param context The discovery context containing job parameters
-     * @param batchSize The maximum number of IPs to include in each batch
-     * @return List of discovery job instances
-     * @throws NMSException if the credential type is not supported
-     */
-    public static List<DiscoveryJob> createBatchedJobs(DiscoveryContext context, int batchSize) {
-        if (context == null) {
-            throw NMSException.badRequest("Discovery context cannot be null");
-        }
-
-        List<String> ips = context.getTargetIps();
-        if (ips == null || ips.isEmpty()) {
-            throw NMSException.badRequest("Target IPs cannot be null or empty");
-        }
-
-        if (batchSize <= 0) {
-            throw NMSException.badRequest("Batch size must be greater than zero");
-        }
-
-        List<DiscoveryJob> jobs = new ArrayList<>();
-
-        // Process IPs in batches
-        for (int i = 0; i < ips.size(); i += batchSize) {
-            int end = Math.min(i + batchSize, ips.size());
-            List<String> batch = ips.subList(i, end);
-
-            // Create a job for this batch
-            DiscoveryJob job = create(batch, context);
-            jobs.add(job);
-        }
-
-        return jobs;
     }
 }

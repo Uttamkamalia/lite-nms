@@ -9,9 +9,9 @@ INSERT INTO public.clients (id, description) VALUES ("motadata", "sample client"
 
 CREATE TABLE motadata.device_catalog (
     id SERIAL PRIMARY KEY,
-    type TEXT NOT NULL,
-    default_protocol TEXT NOT NULL,
-    default_port INTEGER NOT NULL,
+    type TEXT NOT NULL, --LINUX, NETWORK_DEVICE
+    default_protocol TEXT NOT NULL, -- SSH, SNMP
+    default_port INTEGER NOT NULL, -- 22, 161
     metadata JSONB DEFAULT '{}'::jsonb
 );
 

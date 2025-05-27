@@ -5,8 +5,8 @@ import com.motadata.nms.rest.utils.ErrorCodes;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.impl.logging.Logger;
+import io.vertx.core.impl.logging.LoggerFactory;
 
 import static com.motadata.nms.utils.EventBusChannels.*;
 
@@ -28,30 +28,21 @@ public class DiscoveryContextBuilderVerticle extends AbstractVerticle {
       JsonObject request = (JsonObject) discoveryProfileIdMsg.body();
       Integer discoveryProfileId = request.getInteger(DiscoveryContext.DISCOVERY_PROFILE_ID);
 
-      if (discoveryProfileId == null) {
-        logger.error("Profile ID is required for context building");
-        discoveryProfileIdMsg.fail(ErrorCodes.INTERNAL_ERROR, "Discovery Profile ID is required");
-        return;
-      }
-
       logger.info("Building discovery context for profile ID: " + discoveryProfileId);
 
-      // Build the context - this is potentially blocking but safe in a worker verticle
-      contextBuilder.buildFromProfileId(discoveryProfileId)
+      contextBuilder
+        .buildFromProfileId(discoveryProfileId)
         .onSuccess(context -> {
-
-          logger.info("Successfully built discovery context for profile ID: " + discoveryProfileId);
+          logger.info("Successfully built discovery context for discovery-profile-id:" + discoveryProfileId);
           discoveryProfileIdMsg.reply(context.toJson());
-
         })
         .onFailure(err -> {
-
-          logger.error("Failed to build discovery context: " + err.getMessage(), err);
+          logger.error("Failed to build discovery context for discovery-profile-id:"+discoveryProfileId+ " with error :"+ err.getMessage(), err);
           if (err instanceof NMSException) {
             NMSException nmsErr = (NMSException) err;
-            discoveryProfileIdMsg.fail(nmsErr.getStatusCode(), nmsErr.getMessage());
+            discoveryProfileIdMsg.fail(nmsErr.getStatusCode(), nmsErr.getMessage()+nmsErr.getCause());
           } else {
-            discoveryProfileIdMsg.fail(ErrorCodes.INTERNAL_ERROR, "Failed to build discovery context: " + err.getMessage());
+            discoveryProfileIdMsg.fail(ErrorCodes.INTERNAL_ERROR, "Failed to build discovery context: " + err.getMessage()+err.getCause());
           }
         });
     });

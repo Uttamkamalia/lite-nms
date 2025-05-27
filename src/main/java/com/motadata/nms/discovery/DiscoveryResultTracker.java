@@ -7,15 +7,16 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
-class DiscoveryResultTracker {
+public class DiscoveryResultTracker {
   private final int totalDevices;
   private final AtomicInteger completedDevices = new AtomicInteger(0);
 
   private final List<String> successfulIps = Collections.synchronizedList(new ArrayList<>());
   private final Map<String, String> failedIps = new ConcurrentHashMap<>();
 
-  private final Map<Integer, JsonObject> batchResults = new ConcurrentHashMap<>();
-  private int totalBatches = 0;
+  private final Map<String, JsonObject> batchResults = new ConcurrentHashMap<>();
+  private final Map<String, JsonObject> failedBatchResults = new ConcurrentHashMap<>();
+  private final AtomicInteger totalBatches = new AtomicInteger(0);
   private final AtomicInteger completedBatches = new AtomicInteger(0);
 
   public DiscoveryResultTracker(int totalDevices) {
@@ -32,8 +33,15 @@ class DiscoveryResultTracker {
     completedDevices.incrementAndGet();
   }
 
-  public boolean isDeviceCheckComplete() {
-    return completedDevices.get() >= totalDevices;
+  public boolean isBatchFilled(int batchSize) {
+    return successfulIps.size() >= batchSize;
+  }
+
+  public List<String> getSuccessfulBatch(int batchSize){
+     List<String> batch =  this.successfulIps.subList(0, batchSize);
+     this.successfulIps.removeAll(batch);
+     this.totalBatches.getAndIncrement();
+     return batch;
   }
 
   public List<String> getSuccessfulIps() {
@@ -44,28 +52,32 @@ class DiscoveryResultTracker {
     return failedIps;
   }
 
-  public void setTotalBatches(int count) {
-    this.totalBatches = count;
+
+  public Integer addBatch(){
+    return this.totalBatches.incrementAndGet();
   }
 
-  public void addBatchResult(int batchIndex, JsonObject result) {
-    batchResults.put(batchIndex, result);
+  public void addBatchResult(String batchJobId, JsonObject result) {
+    batchResults.put(batchJobId, result);
     completedBatches.incrementAndGet();
   }
 
-  public void addBatchFailure(int batchIndex, String error) {
+  public void addBatchFailure(String batchJobId, String error) {
     JsonObject failure = new JsonObject()
-      .put("batchIndex", batchIndex)
       .put("error", error);
-    batchResults.put(batchIndex, failure);
+    failedBatchResults.put(batchJobId, failure);
     completedBatches.incrementAndGet();
   }
 
   public boolean allBatchesProcessed() {
-    return completedBatches.get() >= totalBatches;
+    return completedBatches.get() >= totalBatches.get();
   }
 
-  public Collection<JsonObject> getBatchResults() {
+  public Collection<JsonObject> getSuccessBatchResults() {
     return batchResults.values();
+  }
+
+  public Collection<JsonObject> getFailedBatchResults() {
+    return failedBatchResults.values();
   }
 }

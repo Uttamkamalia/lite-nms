@@ -1,7 +1,7 @@
 package com.motadata.nms.security;
 
 public class EncryptionServiceProvider {
-  EncryptionService service;
+  private static EncryptionService service;
 
   //need to do double check locking
   public static synchronized EncryptionService getService() {

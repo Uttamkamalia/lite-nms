@@ -1,6 +1,8 @@
 package com.motadata.nms.discovery.job;
 
+import com.motadata.nms.models.DeviceType;
 import com.motadata.nms.models.credential.CredentialProfile;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 import java.util.List;
@@ -18,15 +20,17 @@ public abstract class DiscoveryJob {
   protected Integer credentialProfileId;
 
 
-  protected List<String> ipBatch;
+  protected List<String> batch;
   protected Integer port;
+
   protected final String inputFileName;
+
   protected String command;
 
 
   // Full constructor
   protected DiscoveryJob(List<String> ipBatch, Integer port, Integer discoveryProfileId, Integer credentialProfileId) {
-    this.ipBatch = ipBatch;
+    this.batch = ipBatch;
     this.port = port;
     this.discoveryProfileId = discoveryProfileId;
     this.credentialProfileId = credentialProfileId;
@@ -36,12 +40,8 @@ public abstract class DiscoveryJob {
   public abstract void extractConnectionDetails(CredentialProfile credentialProfile);
 
   // Getters and setters
-  public List<String> getIpBatch() {
-    return ipBatch;
-  }
-
-  public void setIpBatch(List<String> ipBatch) {
-    this.ipBatch = ipBatch;
+  public List<String> getBatch() {
+    return batch;
   }
 
   public Integer getPort() {
@@ -60,8 +60,36 @@ public abstract class DiscoveryJob {
     return credentialProfileId;
   }
 
-  public JsonObject toJson() {
-    JsonObject jsonObject = new JsonObject();
-    return jsonObject;
+  public static DiscoveryJob fromJson(JsonObject json) {
+    if(json.getString("type").equals(DeviceType.Protocol.SNMP.toString())){
+      return SnmpDiscoveryJob.fromJson(json);
+    } else if(json.getString("type").equals(DeviceType.Protocol.SSH.toString())){
+      return SshDiscoveryJob.fromJson(json);
+    }
+    return null;
+  }
+
+
+  public String getInputFileName() {
+    return inputFileName;
+  }
+
+
+  public String getCommand() {
+    return command;
+  }
+
+  public String getId() {
+    return id;
+  }
+
+
+  public String toSerializedJson() {
+    if (this instanceof SshDiscoveryJob sshDiscoveryJob){
+      return sshDiscoveryJob.toSerializedJson();
+    } else if (this instanceof SnmpDiscoveryJob snmpDiscoveryJob){
+      return snmpDiscoveryJob.toSerializedJson();
+    }
+    return null;
   }
 }

@@ -5,8 +5,8 @@ import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.impl.logging.Logger;;
+import io.vertx.core.impl.logging.LoggerFactory;
 
 import static com.motadata.nms.utils.EventBusChannels.DISCOVERY_TRIGGER;
 

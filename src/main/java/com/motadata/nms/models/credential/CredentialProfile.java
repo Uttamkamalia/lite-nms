@@ -59,7 +59,7 @@ public class CredentialProfile {
     JsonObject json = new JsonObject()
       .put("id", id)
       .put("name", name)
-      .put("device_type", deviceTypeId);
+      .put("device_type_id", deviceTypeId);
 
     if (credential != null) {
       json.put("credentials", credential.toJson());

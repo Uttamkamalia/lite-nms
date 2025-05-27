@@ -1,13 +1,19 @@
 package com.motadata.nms.rest.handlers;
 
+import com.motadata.nms.commons.RequestIdHandler;
 import com.motadata.nms.commons.VertxProvider;
+import com.motadata.nms.models.DeviceType;
+import com.motadata.nms.models.credential.CredentialProfile;
 import com.motadata.nms.rest.utils.ErrorHandler;
+import com.motadata.nms.rest.utils.RestUtils;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 
+import static com.motadata.nms.commons.RequestIdHandler.getRequestIdDeliveryOpts;
+import static com.motadata.nms.rest.utils.RestUtils.parseAndRespond;
 import static com.motadata.nms.utils.EventBusChannels.*;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
 import static io.netty.handler.codec.http.HttpHeaderValues.APPLICATION_JSON;
@@ -25,9 +31,10 @@ public class CredentialProfileApiHandler {
   }
 
   private void createCredentialProfile(RoutingContext ctx) {
-    JsonObject body = ctx.body().asJsonObject();
+    String requestId = ctx.get(RequestIdHandler.REQUEST_ID_KEY);
+    CredentialProfile credentialProfile = parseAndRespond(ctx, CredentialProfile::fromJson);
 
-    vertx.eventBus().request(CREDENTIAL_PROFILE_SAVE.name(), body, reply -> {
+    vertx.eventBus().request(CREDENTIAL_PROFILE_SAVE.name(), credentialProfile, getRequestIdDeliveryOpts(requestId), reply -> {
       if (reply.succeeded()) {
         ctx.response()
           .putHeader(CONTENT_TYPE, APPLICATION_JSON)
@@ -40,9 +47,10 @@ public class CredentialProfileApiHandler {
   }
 
   private void getCredentialProfile(RoutingContext ctx) {
-    int id = Integer.parseInt(ctx.pathParam("id"));
+    String requestId = ctx.get(RequestIdHandler.REQUEST_ID_KEY);
+    Integer id = RestUtils.parseAndRespond(ctx, "id", Integer::parseInt, "Credential-Profile ID cannot be null");
 
-    vertx.eventBus().request(CREDENTIAL_PROFILE_GET.name(), id, reply -> {
+    vertx.eventBus().request(CREDENTIAL_PROFILE_GET.name(), id, getRequestIdDeliveryOpts(requestId), reply -> {
       if (reply.succeeded()) {
         ctx.response()
           .putHeader(CONTENT_TYPE, APPLICATION_JSON)
@@ -54,7 +62,8 @@ public class CredentialProfileApiHandler {
   }
 
   private void getAllCredentialProfiles(RoutingContext ctx) {
-    vertx.eventBus().request(CREDENTIAL_PROFILE_GET_ALL.name(), "", reply -> {
+    String requestId = ctx.get(RequestIdHandler.REQUEST_ID_KEY);
+    vertx.eventBus().request(CREDENTIAL_PROFILE_GET_ALL.name(), "", getRequestIdDeliveryOpts(requestId), reply -> {
       if (reply.succeeded()) {
         ctx.response()
           .putHeader(CONTENT_TYPE, APPLICATION_JSON)
@@ -66,9 +75,10 @@ public class CredentialProfileApiHandler {
   }
 
   private void updateCredentialProfile(RoutingContext ctx) {
+    String requestId = ctx.get(RequestIdHandler.REQUEST_ID_KEY);
     JsonObject body = ctx.body().asJsonObject();
 
-    vertx.eventBus().request(CREDENTIAL_PROFILE_UPDATE.name(), body, reply -> {
+    vertx.eventBus().request(CREDENTIAL_PROFILE_UPDATE.name(), body, getRequestIdDeliveryOpts(requestId), reply -> {
       if (reply.succeeded()) {
         ctx.response()
           .putHeader(CONTENT_TYPE, APPLICATION_JSON)
@@ -80,9 +90,10 @@ public class CredentialProfileApiHandler {
   }
 
   private void deleteCredentialProfile(RoutingContext ctx) {
-    int id = Integer.parseInt(ctx.pathParam("id"));
+    String requestId = ctx.get(RequestIdHandler.REQUEST_ID_KEY);
+    Integer id = RestUtils.parseAndRespond(ctx, "id", Integer::parseInt, "Credential-Profile ID cannot be null");
 
-    vertx.eventBus().request(CREDENTIAL_PROFILE_DELETE.name(), id, reply -> {
+    vertx.eventBus().request(CREDENTIAL_PROFILE_DELETE.name(), id, getRequestIdDeliveryOpts(requestId),reply -> {
       if (reply.succeeded()) {
         ctx.response()
           .putHeader(CONTENT_TYPE, APPLICATION_JSON)

@@ -3,6 +3,8 @@ package com.motadata.nms.datastore.dao;
 import com.motadata.nms.commons.NMSException;
 import com.motadata.nms.commons.RowMapper;
 import com.motadata.nms.models.DeviceType;
+import io.vertx.core.impl.logging.Logger;
+import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.sqlclient.Pool;
@@ -13,6 +15,8 @@ import io.vertx.sqlclient.Row;
 
 public class DeviceTypeDAO {
 
+  private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(DeviceTypeDAO.class);
+  private static Logger logger = LoggerFactory.getLogger(DeviceTypeDAO.class);
   private final SqlClient pool;
 
   public DeviceTypeDAO(Pool pool) {
@@ -21,11 +25,14 @@ public class DeviceTypeDAO {
 
   // Create
   public Future<Integer> save(DeviceType deviceType) {
-    String query = "INSERT INTO motadata.device_catalog (type) VALUES ($1, $2)";
+    String query = "INSERT INTO motadata.device_catalog (type, default_protocol, default_port, metadata) VALUES ($1, $2, $3, $4)";
     return pool.preparedQuery(query)
-      .execute(Tuple.of(deviceType.getType()))
+      .execute(Tuple.of(deviceType.getType(), deviceType.getDefaultProtocol(), deviceType.getDefaultPort(), deviceType.getMetadata()))
       .map(v -> deviceType.getId())
-      .recover(err -> Future.failedFuture(NMSException.internal( "Database Error", err)));
+      .recover(err -> {
+        log.error("Failed to save device type", err);
+        return Future.failedFuture(NMSException.internal( "Database Error", err));
+      });
       }
 
   public Future<JsonObject> get(Integer id) {

@@ -8,8 +8,8 @@ import com.motadata.nms.models.credential.CredentialProfile;
 import com.motadata.nms.models.DeviceType;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.impl.logging.Logger;;
+import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.pgclient.PgConnectOptions;
 import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.*;
@@ -27,9 +27,6 @@ public class DatabaseVerticle extends AbstractVerticle {
   private  DeviceTypeDAO deviceTypeDAO;
   private  CredentialProfileDAO credentialProfileDAO;
   private  DiscoveryProfileDAO discoveryProfileDAO;
-  private  ProvisionedDeviceDAO provisionedDeviceDAO;
-  private MetricGroupDAO metricGroupDAO;
-
 
   private void initPool(){
     JsonObject dbConfig = config().getJsonObject(DATASTORE);
@@ -52,8 +49,6 @@ public class DatabaseVerticle extends AbstractVerticle {
     deviceTypeDAO = new DeviceTypeDAO(pool);
     credentialProfileDAO = new CredentialProfileDAO(pool);
     discoveryProfileDAO = new DiscoveryProfileDAO(pool);
-    provisionedDeviceDAO = new ProvisionedDeviceDAO(pool);
-    metricGroupDAO = new MetricGroupDAO(pool);
   }
 
   @Override
@@ -69,11 +64,11 @@ public class DatabaseVerticle extends AbstractVerticle {
 
     vertx.eventBus().consumer(DEVICE_TYPE_SAVE.name())
       .handler(deviceTypeMsg -> {
-
-        DeviceType deviceType = JsonPojoMapper.map((JsonObject)deviceTypeMsg.body(), DeviceType.class);
-        deviceTypeDAO.save(deviceType)
-          .onSuccess(deviceTypeMsg::reply)
-          .onFailure(err -> ErrorHandler.replyFailure(deviceTypeMsg, err));
+        if(deviceTypeMsg.body() instanceof DeviceType deviceType){
+          deviceTypeDAO.save(deviceType)
+            .onSuccess(deviceTypeMsg::reply)
+            .onFailure(err -> ErrorHandler.replyFailure(deviceTypeMsg, logger, err));
+        }
       });
 
     vertx.eventBus().consumer(DEVICE_TYPE_GET.name())
@@ -81,7 +76,7 @@ public class DatabaseVerticle extends AbstractVerticle {
 
         deviceTypeDAO.get((Integer) id.body())
           .onSuccess(id::reply)
-          .onFailure(err -> ErrorHandler.replyFailure(id, err));
+          .onFailure(err -> ErrorHandler.replyFailure(id, logger, err));
       });
 
     vertx.eventBus().consumer(DEVICE_TYPE_GET_ALL.name())
@@ -89,7 +84,7 @@ public class DatabaseVerticle extends AbstractVerticle {
 
         deviceTypeDAO.getAll()
           .onSuccess(blankMsg::reply)
-          .onFailure(err -> ErrorHandler.replyFailure(blankMsg, err));
+          .onFailure(err -> ErrorHandler.replyFailure(blankMsg, logger, err));
       });
 
     vertx.eventBus().consumer(DEVICE_TYPE_DELETE.name())
@@ -98,7 +93,7 @@ public class DatabaseVerticle extends AbstractVerticle {
         Integer id = (Integer) idMsg.body();
         deviceTypeDAO.delete(id)
           .onSuccess(idMsg::reply)
-          .onFailure(err -> ErrorHandler.replyFailure(idMsg, err));
+          .onFailure(err -> ErrorHandler.replyFailure(idMsg,  logger, err));
       });
   }
 
@@ -109,7 +104,7 @@ public class DatabaseVerticle extends AbstractVerticle {
         CredentialProfile profile = CredentialProfile.fromJson((JsonObject) msg.body());
         credentialProfileDAO.save(profile)
           .onSuccess(savedId -> msg.reply(new JsonObject().put("id", savedId)))
-          .onFailure(err -> ErrorHandler.replyFailure(msg, err));
+          .onFailure(err -> ErrorHandler.replyFailure(msg,  logger, err));
       });
 
     vertx.eventBus().consumer(CREDENTIAL_PROFILE_GET.name())
@@ -117,14 +112,14 @@ public class DatabaseVerticle extends AbstractVerticle {
         Integer id = (Integer) msg.body();
         credentialProfileDAO.get(id)
           .onSuccess(msg::reply)
-          .onFailure(err -> ErrorHandler.replyFailure(msg, err));
+          .onFailure(err -> ErrorHandler.replyFailure(msg,  logger, err));
       });
 
     vertx.eventBus().consumer(CREDENTIAL_PROFILE_GET_ALL.name())
       .handler(msg -> {
         credentialProfileDAO.getAll()
           .onSuccess(msg::reply)
-          .onFailure(err -> ErrorHandler.replyFailure(msg, err));
+          .onFailure(err -> ErrorHandler.replyFailure(msg,  logger, err));
       });
 
     vertx.eventBus().consumer(CREDENTIAL_PROFILE_UPDATE.name())
@@ -132,7 +127,7 @@ public class DatabaseVerticle extends AbstractVerticle {
         CredentialProfile profile = CredentialProfile.fromJson((JsonObject) msg.body());
         credentialProfileDAO.update(profile)
           .onSuccess(updatedId -> msg.reply(new JsonObject().put("id", updatedId)))
-          .onFailure(err -> ErrorHandler.replyFailure(msg, err));
+          .onFailure(err -> ErrorHandler.replyFailure(msg,  logger, err));
       });
 
     vertx.eventBus().consumer(CREDENTIAL_PROFILE_DELETE.name())
@@ -140,7 +135,7 @@ public class DatabaseVerticle extends AbstractVerticle {
         Integer id = (Integer) msg.body();
         credentialProfileDAO.delete(id)
           .onSuccess(deletedId -> msg.reply(new JsonObject().put("id", deletedId)))
-          .onFailure(err -> ErrorHandler.replyFailure(msg, err));
+          .onFailure(err -> ErrorHandler.replyFailure(msg,  logger, err));
       });
   }
 
@@ -150,7 +145,7 @@ public class DatabaseVerticle extends AbstractVerticle {
         DiscoveryProfile profile = DiscoveryProfile.fromJson((JsonObject) msg.body());
         discoveryProfileDAO.save(profile)
           .onSuccess(savedId -> msg.reply(new JsonObject().put("id", savedId)))
-          .onFailure(err -> ErrorHandler.replyFailure(msg, err));
+          .onFailure(err -> ErrorHandler.replyFailure(msg,  logger, err));
       });
 
     vertx.eventBus().consumer(DISCOVERY_PROFILE_GET.name())
@@ -158,14 +153,14 @@ public class DatabaseVerticle extends AbstractVerticle {
         Integer id = (Integer) msg.body();
         discoveryProfileDAO.get(id)
           .onSuccess(msg::reply)
-          .onFailure(err -> ErrorHandler.replyFailure(msg, err));
+          .onFailure(err -> ErrorHandler.replyFailure(msg,  logger, err));
       });
 
     vertx.eventBus().consumer(DISCOVERY_PROFILE_GET_ALL.name())
       .handler(msg -> {
         discoveryProfileDAO.getAll()
           .onSuccess(msg::reply)
-          .onFailure(err -> ErrorHandler.replyFailure(msg, err));
+          .onFailure(err -> ErrorHandler.replyFailure(msg,  logger, err));
       });
 
     vertx.eventBus().consumer(DISCOVERY_PROFILE_DELETE.name())
@@ -173,7 +168,7 @@ public class DatabaseVerticle extends AbstractVerticle {
         Integer id = (Integer) msg.body();
         discoveryProfileDAO.delete(id)
           .onSuccess(deletedId -> msg.reply(new JsonObject().put("id", deletedId)))
-          .onFailure(err -> ErrorHandler.replyFailure(msg, err));
+          .onFailure(err -> ErrorHandler.replyFailure(msg,  logger, err));
       });
   }
 }

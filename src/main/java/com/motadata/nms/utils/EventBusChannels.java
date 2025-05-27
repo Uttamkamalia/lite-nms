@@ -25,6 +25,10 @@ public enum EventBusChannels {
   DISCOVERY_CONTEXT_BUILD("discovery.context.build"),
   DISCOVERY_JOBS_SNMP("discovery.jobs.snmp"),
   DISCOVERY_JOBS_SSH("discovery.jobs.ssh"),
+  DISCOVERY_JOBS_START("discovery.jobs.start"),
+  DISCOVERY_BATCH("discovery.batch"),
+  DISCOVERY_BATCH_RESULT("discovery.batch.result"),
+  DISCOVERY_RESULT("discovery.result."),
 
   // Encryption Channels
   ENCRYPT_PASSWORD("encryption.password"),
@@ -33,17 +37,10 @@ public enum EventBusChannels {
 
     private static String SEPERATOR = ".";
     private String name;
-    private Class sendMsgType;
-    private Class receiveMsgType;
 
     EventBusChannels(String name){
       this.name = name;
     }
-    EventBusChannels(String name, Class sendMsgType, Class receiveMsgType){
-    this.name = name;
-    this.sendMsgType = sendMsgType;
-    this.receiveMsgType = receiveMsgType;
-  }
 
 
   public String withClient(String client){
@@ -52,5 +49,9 @@ public enum EventBusChannels {
 
     public String withClientAndCorrelationId(String client, String correlationId){
       return client + SEPERATOR + name + SEPERATOR + correlationId;
+    }
+
+    public String withId(Integer id){
+      return name + SEPERATOR + id;
     }
 }
