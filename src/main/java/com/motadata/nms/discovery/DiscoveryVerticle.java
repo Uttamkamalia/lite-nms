@@ -26,12 +26,12 @@ import static com.motadata.nms.commons.RequestIdHandler.*;
 import static com.motadata.nms.datastore.utils.ConfigKeys.DISCOVERY;
 import static com.motadata.nms.datastore.utils.ConfigKeys.DISCOVERY_BATCH_SIZE;
 
+import static com.motadata.nms.discovery.context.DiscoveryContext.DISCOVERY_PROFILE_ID;
 import static com.motadata.nms.utils.EventBusChannels.*;
 import static java.time.LocalTime.now;
 
 public class DiscoveryVerticle extends AbstractVerticle {
   private static final Logger logger = LoggerFactory.getLogger(DiscoveryVerticle.class);
-  public static final String DISCOVERY_PROFILE_ID = "discoveryProfileId";
 
 
   private final Map<Integer, DiscoveryResultTracker> trackers = new ConcurrentHashMap<>();
@@ -76,8 +76,8 @@ public class DiscoveryVerticle extends AbstractVerticle {
         }
         if(tracker.allBatchesProcessed()){
           JsonObject finalResult = new JsonObject()
-            .put("discoveryProfileId", discoveryProfileId)
-            .put("success", new JsonArray((List) tracker.getSuccessBatchResults()));
+            .put("discoveryProfileId", discoveryProfileId);
+//            .put("success", new JsonArray((List) tracker.getSuccessBatchResults()));
 //            .put("batchResults", new JsonArray(tracker.getSuccessBatchResults()));
 
           vertx.eventBus().publish("discovery.result." + discoveryProfileId, finalResult);
@@ -98,7 +98,7 @@ public class DiscoveryVerticle extends AbstractVerticle {
 
     List<String> targetIps = new ArrayList<>(context.getTargetIps());
     while(!targetIps.isEmpty()){
-      List<String> batch = targetIps.subList(0, Math.min(batchSize, targetIps.size()));
+      List<String> batch = new ArrayList<>(targetIps.subList(0, Math.min(batchSize, targetIps.size())));
       targetIps.removeAll(batch);
       DiscoveryJob batchJob = DiscoveryJobFactory.create(batch, context);
       vertx.eventBus().send(DISCOVERY_BATCH.name(), batchJob);

@@ -48,7 +48,7 @@ public class DeviceType {
   // Enum for protocols
   public enum Protocol {
     SNMP("SNMP", 161, "snmp-plugin.go"),
-    SSH("SSH", 22, "ssh-plugin.go"),
+    SSH("SSH", 2222, "ssh-plugin.go"),
     UNKNOWN("UNKNOWN", 0, "default-plugin.go");
 
     private final String value;

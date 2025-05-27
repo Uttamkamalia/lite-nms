@@ -3,6 +3,8 @@ package com.motadata.nms.commons;
 import io.vertx.core.json.JsonObject;
 import io.vertx.sqlclient.Row;
 
+import java.time.LocalDateTime;
+
 public class RowMapper {
 
   public static <T> T mapRowToPojo(Row row, Class<T> clazz) {
@@ -20,7 +22,12 @@ public class RowMapper {
     JsonObject json = new JsonObject();
     for(int i=0;i<row.size();i++){
       String column = row.getColumnName(i);
-      json.put(column, row.getValue(column));
+      Object value = row.getValue(column);
+      if(value instanceof LocalDateTime dateTime){
+        json.put(column, dateTime.toString());
+        continue;
+      }
+      json.put(column, value);
     }
 
     return json;

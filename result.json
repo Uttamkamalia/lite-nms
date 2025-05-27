@@ -1,0 +1,29 @@
+{
+  "successful": null,
+  "failed": [
+    {
+      "ip": "127.10.3.255",
+      "port": 2222,
+      "protocol": "SSH",
+      "error": "ping-check-failed: ping run failed: listen ip4:icmp : socket: operation not permitted"
+    },
+    {
+      "ip": "127.10.3.253",
+      "port": 2222,
+      "protocol": "SSH",
+      "error": "ping-check-failed: ping run failed: listen ip4:icmp : socket: operation not permitted"
+    },
+    {
+      "ip": "127.10.3.254",
+      "port": 2222,
+      "protocol": "SSH",
+      "error": "ping-check-failed: ping run failed: listen ip4:icmp : socket: operation not permitted"
+    },
+    {
+      "ip": "127.10.3.252",
+      "port": 2222,
+      "protocol": "SSH",
+      "error": "ping-check-failed: ping run failed: listen ip4:icmp : socket: operation not permitted"
+    }
+  ]
+}

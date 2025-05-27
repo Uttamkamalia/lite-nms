@@ -6,6 +6,8 @@ import io.vertx.core.Promise;
 import io.vertx.core.json.JsonObject;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.logging.Logger;
@@ -15,18 +17,19 @@ import static com.motadata.nms.utils.EventBusChannels.DISCOVERY_BATCH_RESULT;
 
 
 public class BatchProcessorVerticle extends AbstractVerticle {
-  private static final String OUTPUT_DIR = "/home/uttam-kamalia/Documents/goprac/go-plugin/ssh-plugin/";
+  private static final String OUTPUT_DIR = "/home/uttam-kamalia/Documents/goprac/go-plugin/ssh-plugin/testfiles/";
   private static final String GO_EXECUTABLE_PATH = "/home/uttam-kamalia/Documents/goprac/go-plugin/ssh-plugin/"; // Replace with real path
   private static final org.slf4j.Logger log = LoggerFactory.getLogger(BatchProcessorVerticle.class);
 
   @Override
   public void start(Promise<Void> startPromise) {
     vertx.eventBus().consumer(DISCOVERY_BATCH.name(), message -> {
-      JsonObject batch = (JsonObject) message.body();
-      DiscoveryJob batchJob = DiscoveryJob.fromJson(batch);
+//      JsonObject batch = (JsonObject) message.body();
+//      DiscoveryJob batchJob = DiscoveryJob.fromJson(batch);
+      DiscoveryJob batchJob = (DiscoveryJob) message.body();
 
       String fileName = OUTPUT_DIR + batchJob.getInputFileName();
-      String pluginExecutablePath = GO_EXECUTABLE_PATH +"/"+"ssh_plugin.sh";
+      String pluginExecutablePath = GO_EXECUTABLE_PATH +"ssh_plugin";
 
       vertx.<JsonObject>executeBlocking(promise -> {
         try {
@@ -34,10 +37,11 @@ public class BatchProcessorVerticle extends AbstractVerticle {
 
           // Write batch file
           Files.write(Paths.get(fileName), batchJob.toSerializedJson().getBytes());
+          File outputFile = new File(OUTPUT_DIR+"result.json");
 
           // Run Go executable
-          Process process = new ProcessBuilder(pluginExecutablePath, fileName).start();
-          int exitCode = process.waitFor();
+          Process process = new ProcessBuilder(pluginExecutablePath , fileName).start();
+          int exitCode = process.waitFor(); // todo fix waiting
           String output = new String(process.getInputStream().readAllBytes());
           log.info("result:"+output);
 
@@ -49,6 +53,15 @@ public class BatchProcessorVerticle extends AbstractVerticle {
 
           promise.complete(result);
         } catch (Exception e) {
+          try {
+            Files.delete(Paths.get(fileName));
+          } catch (IOException ex) {
+            JsonObject error = new JsonObject()
+              .put("discoveryProfileId", batchJob.getDiscoveryProfileId())
+              .put("batchJobId", batchJob.getId())
+              .put("error", e.getMessage());
+            promise.complete(error);
+          }
           JsonObject error = new JsonObject()
             .put("discoveryProfileId", batchJob.getDiscoveryProfileId())
             .put("batchJobId", batchJob.getId())

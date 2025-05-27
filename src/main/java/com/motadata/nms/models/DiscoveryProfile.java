@@ -75,6 +75,9 @@ public class DiscoveryProfile {
       throw new IllegalArgumentException("DiscoveryProfile JSON cannot be null");
     }
 
+    Integer id = json.getInteger("id");
+
+
     String target = json.getString("target");
     if (target == null || target.isEmpty()) {
       throw new IllegalArgumentException("DiscoveryProfile target is required");
@@ -85,8 +88,15 @@ public class DiscoveryProfile {
       throw new IllegalArgumentException("DiscoveryProfile credentials_profile_id is required");
     }
 
+    if(id!=null){
+      return new DiscoveryProfile(
+        id,
+        target,
+        credentialsProfileId
+      );
+    }
+
     return new DiscoveryProfile(
-      json.getInteger("id"),
       target,
       credentialsProfileId
     );

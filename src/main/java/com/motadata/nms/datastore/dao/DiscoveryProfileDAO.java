@@ -70,7 +70,10 @@ public class DiscoveryProfileDAO {
         rs.forEach(row -> result.add(RowMapper.mapRowToJson(row)));
         return result;
       })
-      .recover(err -> Future.failedFuture(NMSException.internal("Database Error", err)));
+      .recover(err -> {
+        logger.error("Failed to get all discovery profiles", err);
+        return Future.failedFuture(NMSException.internal("Database Error", err));
+      });
   }
 
   // Delete

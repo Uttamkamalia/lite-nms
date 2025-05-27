@@ -178,9 +178,9 @@ public class SshDiscoveryJob extends DiscoveryJob {
     StringBuilder sb = new StringBuilder();
     JsonObject deviceJson = this.toDeviceJson();
 
-    sb.append("{\"discoveryProfileId:\""+discoveryProfileId+",");
+    sb.append("{\"DiscoveryProfileId\":"+discoveryProfileId+",");
 
-    sb.append("{\"devices:[\"");
+    sb.append("\"devices\":[");
 
     this.batch.forEach(ip -> {
       deviceJson.put("ip", ip);
