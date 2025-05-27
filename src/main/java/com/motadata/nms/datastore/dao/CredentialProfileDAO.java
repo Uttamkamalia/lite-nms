@@ -9,9 +9,12 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.sqlclient.Pool;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.Tuple;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CredentialProfileDAO {
 
+  private static final Logger log = LoggerFactory.getLogger(CredentialProfileDAO.class);
   private final Pool pool;
 
   public CredentialProfileDAO(Pool pool) {
@@ -22,9 +25,12 @@ public class CredentialProfileDAO {
   public Future<String> save(CredentialProfile profile) {
     String query = "INSERT INTO motadata.credential_profile (name, device_type, credentials) VALUES ($1, $2, $3)";
     return pool.preparedQuery(query)
-      .execute(Tuple.of(profile.getName(), profile.getDeviceTypeId(), profile.getCredential()))
+      .execute(Tuple.of(profile.getName(), profile.getDeviceTypeId(), profile.getCredential().toJson()))
       .map(v -> "created")
-      .recover(err -> Future.failedFuture(NMSException.internal("Database Error", err)));
+      .recover(err -> {
+        log.error("Database error: "+err);
+        return Future.failedFuture(NMSException.internal("Database Error", err));
+      });
   }
 
   // Read single
@@ -40,7 +46,7 @@ public class CredentialProfileDAO {
         Row row = rowSet.iterator().next();
         return Future.succeededFuture(RowMapper.mapRowToJson(row));
       })
-      .onFailure(err -> Future.failedFuture(NMSException.internal("Database Error", err)));
+      .onFailure(err -> Future.failedFuture(NMSException.internal("Database Error:"+err.getCause(), err)));
   }
 
   // Read all

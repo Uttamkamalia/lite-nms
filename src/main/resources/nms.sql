@@ -38,11 +38,10 @@ CREATE TABLE motadata.credential_profile (
 
 CREATE TABLE motadata.discovery_profile (
     id SERIAL PRIMARY KEY,
-    target TEXT
-    credentials_profile_id INT credential_profile(id),
+    target TEXT,
+    credentials_profile_id INT REFERENCES motadata.credential_profile(id),
     created_at TIMESTAMP DEFAULT now()
-)
-
+);
 // --status for each discovery -> table
 
 CREATE TABLE motadata.provisioned_devices (

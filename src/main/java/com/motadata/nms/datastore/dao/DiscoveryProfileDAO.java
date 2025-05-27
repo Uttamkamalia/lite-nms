@@ -4,13 +4,18 @@ import com.motadata.nms.commons.NMSException;
 import com.motadata.nms.commons.RowMapper;
 import com.motadata.nms.models.DiscoveryProfile;
 import io.vertx.core.Future;
+import io.vertx.core.impl.logging.Logger;
+import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.sqlclient.Pool;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.Tuple;
 
+import static io.vertx.core.http.impl.HttpClientConnection.log;
+
 public class DiscoveryProfileDAO {
+  Logger logger = LoggerFactory.getLogger(DiscoveryProfileDAO.class);
 
   private final Pool pool;
 
@@ -29,7 +34,10 @@ public class DiscoveryProfileDAO {
         }
         return null;
       })
-      .recover(err -> Future.failedFuture(NMSException.internal("Database Error", err)));
+      .recover(err -> {
+        logger.error("Failed to save device type", err);
+        return Future.failedFuture(NMSException.internal( "Database Error", err));
+      });
   }
 
   // Read single

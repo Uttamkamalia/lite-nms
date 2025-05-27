@@ -101,10 +101,11 @@ public class DatabaseVerticle extends AbstractVerticle {
 
     vertx.eventBus().consumer(CREDENTIAL_PROFILE_SAVE.name())
       .handler(msg -> {
-        CredentialProfile profile = CredentialProfile.fromJson((JsonObject) msg.body());
-        credentialProfileDAO.save(profile)
-          .onSuccess(savedId -> msg.reply(new JsonObject().put("id", savedId)))
-          .onFailure(err -> ErrorHandler.replyFailure(msg,  logger, err));
+        if(msg.body() instanceof CredentialProfile credentialProfile){
+          credentialProfileDAO.save(credentialProfile)
+            .onSuccess(savedId -> msg.reply(new JsonObject().put("id", savedId)))
+            .onFailure(err -> ErrorHandler.replyFailure(msg,  logger, err));
+        }
       });
 
     vertx.eventBus().consumer(CREDENTIAL_PROFILE_GET.name())
@@ -142,10 +143,11 @@ public class DatabaseVerticle extends AbstractVerticle {
   private void registerDiscoveryProfileEventConsumers() {
     vertx.eventBus().consumer(DISCOVERY_PROFILE_SAVE.name())
       .handler(msg -> {
-        DiscoveryProfile profile = DiscoveryProfile.fromJson((JsonObject) msg.body());
-        discoveryProfileDAO.save(profile)
-          .onSuccess(savedId -> msg.reply(new JsonObject().put("id", savedId)))
-          .onFailure(err -> ErrorHandler.replyFailure(msg,  logger, err));
+        if(msg.body() instanceof DiscoveryProfile discoveryProfile){
+          discoveryProfileDAO.save(discoveryProfile)
+            .onSuccess(savedId -> msg.reply(new JsonObject().put("id", savedId)))
+            .onFailure(err -> ErrorHandler.replyFailure(msg,  logger, err));
+        }
       });
 
     vertx.eventBus().consumer(DISCOVERY_PROFILE_GET.name())

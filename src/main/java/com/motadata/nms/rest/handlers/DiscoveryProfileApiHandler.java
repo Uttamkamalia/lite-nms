@@ -101,7 +101,7 @@ public class DiscoveryProfileApiHandler {
     String requestId = ctx.get(RequestIdHandler.REQUEST_ID_KEY);
 
     JsonObject body = ctx.body().asJsonObject();
-    Integer discoveryProfileId = body.getInteger("discoveryProfileId");
+    Integer discoveryProfileId = body.getInteger("discovery_profile_id");
     if (discoveryProfileId == null) {
       ErrorHandler.respondError(ctx, new IllegalArgumentException("Discovery-Profile ID cannot be null"));
       return;

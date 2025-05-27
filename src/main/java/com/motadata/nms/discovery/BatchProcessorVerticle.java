@@ -17,7 +17,6 @@ import static com.motadata.nms.utils.EventBusChannels.DISCOVERY_BATCH_RESULT;
 public class BatchProcessorVerticle extends AbstractVerticle {
   private static final String OUTPUT_DIR = "/home/uttam-kamalia/Documents/goprac/go-plugin/ssh-plugin/";
   private static final String GO_EXECUTABLE_PATH = "/home/uttam-kamalia/Documents/goprac/go-plugin/ssh-plugin/"; // Replace with real path
-  private static final String RESULT_EVENT_BUS_ADDRESS = "discovery.batch.result";
   private static final org.slf4j.Logger log = LoggerFactory.getLogger(BatchProcessorVerticle.class);
 
   @Override
