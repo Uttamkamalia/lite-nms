@@ -12,6 +12,7 @@ import io.vertx.sqlclient.Pool;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.Tuple;
 
+import static com.motadata.nms.rest.utils.ErrorCodes.DAO_ERROR;
 import static io.vertx.core.http.impl.HttpClientConnection.log;
 
 public class DiscoveryProfileDAO {
@@ -35,8 +36,9 @@ public class DiscoveryProfileDAO {
         return null;
       })
       .recover(err -> {
-        logger.error("Failed to save device type", err);
-        return Future.failedFuture(NMSException.internal( "Database Error", err));
+        String errMsg = "Database Error: Failed to save discovery-profile:"+ profile;
+        log.error(errMsg, err);
+        return Future.failedFuture(NMSException.internal( errMsg, err));
       });
   }
 
@@ -47,17 +49,17 @@ public class DiscoveryProfileDAO {
       .execute(Tuple.of(id))
       .compose(rowSet -> {
         if (rowSet == null || !rowSet.iterator().hasNext()) {
-          return Future.failedFuture(NMSException.notFound("Discovery Profile not found"));
+          return Future.failedFuture(NMSException.notFound(DAO_ERROR + "Discovery-profile not found with id: "+id));
         }
-        Row row = rowSet.iterator().next();
-        return Future.succeededFuture(RowMapper.mapRowToJson(row));
+        try {
+          Row row = rowSet.iterator().next();
+          return Future.succeededFuture(RowMapper.mapRowToJson(row));
+        } catch (Exception e) {
+          return Future.failedFuture(NMSException.internal(DAO_ERROR + "Failed to map Discovery-profile row to JSON for id:"+id, e));
+        }
       })
-      .recover(err -> {
-        if (err instanceof NMSException) {
-          return Future.failedFuture(err);
-        }
-        return Future.failedFuture(NMSException.internal("Database Error", err));
-      });
+      .onFailure(err -> Future.failedFuture(NMSException.internal(DAO_ERROR + "Failed to query discovery-profile with id:"+id, err)));
+
   }
 
   // Read all
@@ -65,15 +67,16 @@ public class DiscoveryProfileDAO {
     String query = "SELECT * FROM motadata.discovery_profile";
     return pool.preparedQuery(query)
       .execute()
-      .map(rs -> {
-        JsonArray result = new JsonArray();
-        rs.forEach(row -> result.add(RowMapper.mapRowToJson(row)));
-        return result;
+      .compose(rs -> {
+        JsonArray results = new JsonArray();
+        try{
+          rs.forEach(row -> results.add(RowMapper.mapRowToJson(row)));
+          return Future.succeededFuture(results);
+        } catch (Exception e) {
+          return Future.failedFuture(NMSException.internal(DAO_ERROR + "Failed to map Discovery-profile row to JSON for get-all:", e));
+        }
       })
-      .recover(err -> {
-        logger.error("Failed to get all discovery profiles", err);
-        return Future.failedFuture(NMSException.internal("Database Error", err));
-      });
+      .onFailure(err -> NMSException.internal(DAO_ERROR + "Failed to query all discovery-profiles", err));
   }
 
   // Delete
@@ -82,7 +85,7 @@ public class DiscoveryProfileDAO {
     return pool.preparedQuery(query)
       .execute(Tuple.of(id))
       .map(v -> id)
-      .recover(err -> Future.failedFuture(NMSException.internal("Database Error", err)));
+      .recover(err -> Future.failedFuture(NMSException.internal(DAO_ERROR + "Failed to delete discovery-profile with id:"+id , err)));
   }
 }
 

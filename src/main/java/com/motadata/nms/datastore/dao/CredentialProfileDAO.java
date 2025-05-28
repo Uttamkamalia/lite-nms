@@ -12,6 +12,8 @@ import io.vertx.sqlclient.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.motadata.nms.rest.utils.ErrorCodes.DAO_ERROR;
+
 public class CredentialProfileDAO {
 
   private static final Logger log = LoggerFactory.getLogger(CredentialProfileDAO.class);
@@ -28,7 +30,8 @@ public class CredentialProfileDAO {
       .execute(Tuple.of(profile.getName(), profile.getDeviceTypeId(), profile.getCredential().toJson()))
       .map(v -> "created")
       .recover(err -> {
-        log.error("Database error: "+err);
+        String errMsg = "Database Error: Failed to save credential-profile:"+ profile;
+        log.error(errMsg, err);
         return Future.failedFuture(NMSException.internal("Database Error", err));
       });
   }
@@ -41,12 +44,16 @@ public class CredentialProfileDAO {
       .execute(Tuple.of(id))
       .compose(rowSet -> {
         if (rowSet == null || !rowSet.iterator().hasNext()) {
-          return Future.failedFuture(NMSException.notFound("CredentialProfile not found"));
+          return Future.failedFuture(NMSException.notFound(DAO_ERROR + "CredentialProfile not found"));
         }
-        Row row = rowSet.iterator().next();
-        return Future.succeededFuture(RowMapper.mapRowToJson(row));
+        try {
+          Row row = rowSet.iterator().next();
+          return Future.succeededFuture(RowMapper.mapRowToJson(row));
+        } catch (Exception e) {
+          return Future.failedFuture(NMSException.internal(DAO_ERROR + "Failed to map credential-profile row to JSON for id:"+id, e));
+        }
       })
-      .onFailure(err -> Future.failedFuture(NMSException.internal("Database Error:"+err.getCause(), err)));
+      .onFailure(err -> Future.failedFuture(NMSException.internal(DAO_ERROR + "Failed to query device-type with id:"+id, err)));
   }
 
   // Read all
@@ -54,12 +61,16 @@ public class CredentialProfileDAO {
     String query = "SELECT * FROM motadata.credential_profile";
     return pool.preparedQuery(query)
       .execute()
-      .map(rs -> {
-        JsonArray result = new JsonArray();
-        rs.forEach(row -> result.add(RowMapper.mapRowToJson(row)));
-        return result;
+      .compose(rs -> {
+        JsonArray results = new JsonArray();
+        try{
+          rs.forEach(row -> results.add(RowMapper.mapRowToJson(row)));
+          return Future.succeededFuture(results);
+        } catch (Exception e) {
+          return Future.failedFuture(NMSException.internal(DAO_ERROR + "Failed to map Credential-profile row to JSON for get-all:", e));
+        }
       })
-      .recover(err -> Future.failedFuture(NMSException.internal("Database Error", err)));
+      .onFailure(err -> NMSException.internal(DAO_ERROR + "Failed to query all credential-profile", err));
   }
 
   // Update
@@ -77,6 +88,6 @@ public class CredentialProfileDAO {
     return pool.preparedQuery(query)
       .execute(Tuple.of(id))
       .map(v -> id)
-      .recover(err -> Future.failedFuture(NMSException.internal("Database Error", err)));
+      .recover(err -> Future.failedFuture(NMSException.internal(DAO_ERROR + "Failed to delete credential-profile with id:"+id , err)));
   }
 }

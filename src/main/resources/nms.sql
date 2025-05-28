@@ -22,13 +22,6 @@ VALUES ('NETWORK_DEVICE', 'SNMP', 161, '{"description": "Generic network device"
 INSERT INTO motadata.device_catalog (type, default_protocol, default_port, metadata)
 VALUES ('LINUX', 'SSH', 22, '{"description": "Linux server or workstation"}'::jsonb);
 
-
-CREATE TABLE motadata.metric_group (
-    id SERIAL PRIMARY KEY,
-    name TEXT
-    metrics TEXT[]
-);
-
 CREATE TABLE motadata.credential_profile (
     id SERIAL PRIMARY KEY,
     name TEXT,
@@ -40,34 +33,44 @@ CREATE TABLE motadata.discovery_profile (
     id SERIAL PRIMARY KEY,
     target TEXT,
     credentials_profile_id INT REFERENCES motadata.credential_profile(id),
+    discovery_info JSONB DEFAULT '{}'::jsonb,
     created_at TIMESTAMP DEFAULT now()
 );
-// --status for each discovery -> table
 
 CREATE TABLE motadata.provisioned_devices (
     id SERIAL PRIMARY KEY,
 
     ip VARCHAR(255) NOT NULL,
     port INT,
+    protocol TEXT,
 
     discovery_profile_id INT discovery_profile(id), -- think abt removing
     credentials_profile_id INT credential_profile(id),
 
-    hostname VARCHAR(255),
-    os VARCHAR(100),
-    device_type VARCHAR(50),
+    device_type_id INT NOT NULL REFERENCES device_catalog(id),
+    device_info JSONB DEFAULT '{}'::jsonb,
 
     status TEXT,                        -- PROVISIONED, NOT-PROVISIONED
     discovered_at TIMESTAMP DEFAULT now()
 );
 
-CREATE TABLE motadata.metric_configs (
+CREATE TABLE motadata.metrics (
     id SERIAL PRIMARY KEY,
-    discovery_profile_id INT discovery_profile(id),
-    metric_name VARCHAR(100),
+    name TEXT NOT NULL,
+    device_type_id INT NOT NULL REFERENCES device_catalog(id),
+    protocol TEXT NOT NULL,
+    plugin_id TEXT NOT NULL,
+);
+
+CREATE TABLE motadata.metric_group (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    metrics TEXT[] NOT NULL,
+    device_type_id INT NOT NULL REFERENCES device_catalog(id),
     polling_interval_seconds INT DEFAULT 10,
-    last_polled at TIMESTAMP,
-    status TEXT                         -- ONGOING, STOPPED
+    last_polled_at TIMESTAMP,
+    status TEXT,                        -- ONGOING, STOPPED
+    created_at TIMESTAMP DEFAULT now()
 );
 
 CREATE TABLE motadata.metrics (

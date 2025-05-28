@@ -8,4 +8,7 @@ public class ErrorCodes {
   public static final int CONFLICT = 409;
   public static final int UNAUTHORIZED = 401;
   public static final int FORBIDDEN = 403;
+
+  public static final String DAO_ERROR = "[DAO_ERROR] ";
+  public static final String REST_HANDLER_ERROR = "[REST_HANDLER_ERROR] ";
 }

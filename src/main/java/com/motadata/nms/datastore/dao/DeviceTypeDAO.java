@@ -13,10 +13,10 @@ import io.vertx.sqlclient.Tuple;
 import io.vertx.core.Future;
 import io.vertx.sqlclient.Row;
 
-public class DeviceTypeDAO {
+import static com.motadata.nms.rest.utils.ErrorCodes.DAO_ERROR;
 
-  private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(DeviceTypeDAO.class);
-  private static Logger logger = LoggerFactory.getLogger(DeviceTypeDAO.class);
+public class DeviceTypeDAO {
+  private static final Logger log = LoggerFactory.getLogger(DeviceTypeDAO.class);
   private final SqlClient pool;
 
   public DeviceTypeDAO(Pool pool) {
@@ -30,10 +30,11 @@ public class DeviceTypeDAO {
       .execute(Tuple.of(deviceType.getType(), deviceType.getDefaultProtocol(), deviceType.getDefaultPort(), deviceType.getMetadata()))
       .map(v -> deviceType.getId())
       .recover(err -> {
-        log.error("Failed to save device type", err);
-        return Future.failedFuture(NMSException.internal( "Database Error", err));
+        String errMsg = "Database Error: Failed to save device-type:"+ deviceType;
+        log.error(errMsg, err);
+        return Future.failedFuture(NMSException.internal( errMsg, err));
       });
-      }
+  }
 
   public Future<JsonObject> get(Integer id) {
     String query = "SELECT * FROM motadata.device_catalog WHERE id = $1";
@@ -43,13 +44,17 @@ public class DeviceTypeDAO {
       .compose(rowSet -> {
 
         if (rowSet == null || !rowSet.iterator().hasNext()) {
-          return Future.failedFuture(NMSException.notFound("Device-type not found"));
+          return Future.failedFuture(NMSException.notFound(DAO_ERROR + "Device-type not found with id: "+id));
+        }
+        try {
+          Row row = rowSet.iterator().next();
+          return Future.succeededFuture(RowMapper.mapRowToJson(row));
+        } catch (Exception e) {
+          return Future.failedFuture(NMSException.internal(DAO_ERROR + "Failed to map Device-type row to JSON for id:"+id, e));
         }
 
-        Row row = rowSet.iterator().next();
-        return Future.succeededFuture(RowMapper.mapRowToJson(row));
       })
-      .onFailure(err -> Future.failedFuture(NMSException.internal("Database Error", err)));
+      .onFailure(err -> Future.failedFuture(NMSException.internal(DAO_ERROR + "Failed to query device-type with id:"+id, err)));
   }
 
   public Future<JsonArray> getAll(){
@@ -57,14 +62,16 @@ public class DeviceTypeDAO {
 
     return pool.preparedQuery(query)
       .execute()
-      .map(rs -> {
+      .compose(rs -> {
         JsonArray results = new JsonArray();
-
-        rs.forEach(r -> results.add(RowMapper.mapRowToJson(r)));
-
-        return results;
+        try{
+          rs.forEach(row -> results.add(RowMapper.mapRowToJson(row)));
+          return Future.succeededFuture(results);
+        } catch (Exception e) {
+          return Future.failedFuture(NMSException.internal(DAO_ERROR + "Failed to map Device-type row to JSON for get-all:", e));
+        }
       })
-      .recover(err -> Future.failedFuture(NMSException.internal("Database Error", err)));
+      .onFailure(err -> NMSException.internal(DAO_ERROR + "Failed to query all device-types", err));
   }
 
   // Delete
@@ -73,7 +80,7 @@ public class DeviceTypeDAO {
     return pool.preparedQuery(query)
       .execute(Tuple.of(id))
       .map(v -> id)
-      .recover(err -> Future.failedFuture(NMSException.internal("Internal Error", err)));
+      .recover(err -> Future.failedFuture(NMSException.internal(DAO_ERROR + "Failed to delete device-type with id:"+id , err)));
   }
 }
 

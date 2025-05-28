@@ -1,5 +1,6 @@
 package com.motadata.nms.commons;
 
+import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
 import io.vertx.sqlclient.Row;
 
@@ -19,6 +20,21 @@ public class RowMapper {
   }
 
   public static JsonObject mapRowToJson(Row row){
+    JsonObject json = new JsonObject();
+    for(int i=0;i<row.size();i++){
+      String column = row.getColumnName(i);
+      Object value = row.getValue(column);
+      if(value instanceof LocalDateTime dateTime){
+        json.put(column, dateTime.toString());
+        continue;
+      }
+      json.put(column, value);
+    }
+
+    return json;
+  }
+
+  public static JsonObject mapRowToJson(Row row, Message<?> message){
     JsonObject json = new JsonObject();
     for(int i=0;i<row.size();i++){
       String column = row.getColumnName(i);
