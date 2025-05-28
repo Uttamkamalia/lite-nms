@@ -8,6 +8,8 @@ import com.motadata.nms.models.credential.CredentialProfile;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.impl.logging.Logger;
+import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.json.JsonObject;
 
 import java.util.List;
@@ -15,6 +17,8 @@ import java.util.List;
 import static com.motadata.nms.utils.EventBusChannels.*;
 
 public class DiscoveryContextBuilder {
+
+  private static final Logger logger = LoggerFactory.getLogger(DiscoveryContextBuilder.class);
 
   private final Vertx vertx;
 
@@ -28,6 +32,8 @@ public class DiscoveryContextBuilder {
    * @return A Future containing the built DiscoveryContext
    */
   public Future<DiscoveryContext> buildFromProfileId(Integer profileId) {
+    logger.info("Building discovery context for profile ID: " + profileId);
+
     if (profileId == null) {
       return Future.failedFuture(NMSException.badRequest("Discovery Profile ID cannot be null"));
     }

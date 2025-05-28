@@ -43,13 +43,14 @@ public class BatchProcessorVerticle extends AbstractVerticle {
           Process process = new ProcessBuilder(pluginExecutablePath , fileName).start();
           int exitCode = process.waitFor(); // todo fix waiting
           String output = new String(process.getInputStream().readAllBytes());
-          log.info("result:"+output);
 
+          JsonObject outputJson = new JsonObject(output);
           JsonObject result = new JsonObject()
             .put("discoveryProfileId", batchJob.getDiscoveryProfileId())
             .put("batchJobId", batchJob.getId())
             .put("exitCode", exitCode)
-            .put("output", output);
+            .put("successfulDevices", outputJson.getJsonArray("successful"))
+            .put("failed", outputJson.getJsonArray("failed"));
 
           promise.complete(result);
         } catch (Exception e) {

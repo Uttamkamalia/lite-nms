@@ -23,12 +23,15 @@ public class DiscoveryContextBuilderVerticle extends AbstractVerticle {
   public void start(Promise<Void> startPromise) {
     contextBuilder = new DiscoveryContextBuilder();
 
-    // Register consumer for building discovery contexts
+    registerDiscoveryContextBuildConsumer();
+
+    startPromise.complete();
+  }
+
+  private void registerDiscoveryContextBuildConsumer() {
     vertx.eventBus().consumer(DISCOVERY_CONTEXT_BUILD.name(), discoveryProfileIdMsg -> {
       JsonObject request = (JsonObject) discoveryProfileIdMsg.body();
       Integer discoveryProfileId = request.getInteger(DiscoveryContext.DISCOVERY_PROFILE_ID);
-
-      logger.info("Building discovery context for profile ID: " + discoveryProfileId);
 
       contextBuilder
         .buildFromProfileId(discoveryProfileId)
@@ -46,7 +49,5 @@ public class DiscoveryContextBuilderVerticle extends AbstractVerticle {
           }
         });
     });
-
-    startPromise.complete();
   }
 }
