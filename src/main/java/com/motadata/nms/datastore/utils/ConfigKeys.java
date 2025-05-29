@@ -14,4 +14,8 @@ public class ConfigKeys {
 
   public static final String DISCOVERY = "discovery";
   public static final String DISCOVERY_BATCH_SIZE = "batch_size";
+  public static final String DISCOVERY_BATCH_TIMEOUT_MS = "batch_timeout_ms";
+  public static final String DISCOVERY_REQUEST_TIMEOUT_MS = "discovery_request_timeout_ms";
+  public static final String DISCOVERY_PLUGIN_IO_DIR = "discovery_plugin_io_dir";
+  public static final String DISCOVERY_PLUGIN_EXECUTABLE_DIR = "discovery_plugin_executable_dir";
 }

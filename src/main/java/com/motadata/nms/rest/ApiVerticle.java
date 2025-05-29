@@ -3,9 +3,7 @@ package com.motadata.nms.rest;
 import com.motadata.nms.commons.RequestIdHandler;
 import com.motadata.nms.commons.VertxProvider;
 import com.motadata.nms.datastore.utils.ConfigKeys;
-import com.motadata.nms.rest.handlers.CredentialProfileApiHandler;
-import com.motadata.nms.rest.handlers.DeviceTypeApiHandler;
-import com.motadata.nms.rest.handlers.DiscoveryProfileApiHandler;
+import com.motadata.nms.rest.handlers.*;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpServer;
@@ -26,6 +24,8 @@ public class ApiVerticle extends AbstractVerticle {
     new DeviceTypeApiHandler().registerRoutes(router);
     new CredentialProfileApiHandler().registerRoutes(router);
     new DiscoveryProfileApiHandler().registerRoutes(router);
+    new MetricApiHandler().registerRoutes(router);
+    new MetricGroupApiHandler().registerRoutes(router);
 
     httpServer.requestHandler(router)
       .listen(config().getJsonObject(ConfigKeys.HTTP).getInteger(ConfigKeys.HTTP_PORT));

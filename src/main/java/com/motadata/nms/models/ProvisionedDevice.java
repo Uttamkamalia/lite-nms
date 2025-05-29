@@ -2,33 +2,26 @@ package com.motadata.nms.models;
 
 import io.vertx.core.json.JsonObject;
 
+import java.sql.Timestamp;
+
 public class ProvisionedDevice {
   private Integer id;
   private String ipAddress;
   private Integer port;
+  private String protocol;
+
   private Integer discoveryProfileId;
   private Integer credentialProfileId;
+  private Integer deviceTypeId;
+
   private String hostname;
   private String os;
-  private String protocol;
+  private JsonObject metadata;
+
   private String status;
-  private String discoveryTime;
+  private Timestamp discoveredAt;
 
   public ProvisionedDevice() {
-  }
-
-  public ProvisionedDevice(String ipAddress, Integer port, Integer discoveryProfileId,
-                          Integer credentialProfileId, String hostname, String os,
-                          String protocol, String status, String discoveryTime) {
-    this.ipAddress = ipAddress;
-    this.port = port;
-    this.discoveryProfileId = discoveryProfileId;
-    this.credentialProfileId = credentialProfileId;
-    this.hostname = hostname;
-    this.os = os;
-    this.protocol = protocol;
-    this.status = status;
-    this.discoveryTime = discoveryTime;
   }
 
   public static ProvisionedDevice fromJson(JsonObject json) {
@@ -42,7 +35,6 @@ public class ProvisionedDevice {
     device.setOs(json.getString("os"));
     device.setProtocol(json.getString("protocol"));
     device.setStatus(json.getString("status"));
-    device.setDiscoveryTime(json.getString("discovery_time"));
     return device;
   }
 
@@ -56,13 +48,21 @@ public class ProvisionedDevice {
       .put("os", os)
       .put("protocol", protocol)
       .put("status", status)
-      .put("discovery_time", discoveryTime);
+      .put("discovery_time", discoveredAt.toString());
 
     if (id != null) {
       json.put("id", id);
     }
 
     return json;
+  }
+
+  public Integer getDeviceTypeId() {
+    return deviceTypeId;
+  }
+
+  public void setDeviceTypeId(Integer deviceTypeId) {
+    this.deviceTypeId = deviceTypeId;
   }
 
   public Integer getId() {
@@ -137,13 +137,23 @@ public class ProvisionedDevice {
     this.status = status;
   }
 
-  public String getDiscoveryTime() {
-    return discoveryTime;
+  public Timestamp getDiscoveredAt() {
+    return discoveredAt;
   }
 
-  public void setDiscoveryTime(String discoveryTime) {
-    this.discoveryTime = discoveryTime;
+  public void setDiscoveredAt(Timestamp discoveredAt) {
+    this.discoveredAt = discoveredAt;
   }
+
+
+  public JsonObject getMetadata() {
+    return metadata;
+  }
+
+  public void setMetadata(JsonObject metadata) {
+    this.metadata = metadata;
+  }
+
 
   @Override
   public String toString() {
@@ -157,7 +167,7 @@ public class ProvisionedDevice {
       ", os='" + os + '\'' +
       ", protocol='" + protocol + '\'' +
       ", status='" + status + '\'' +
-      ", discoveryTime='" + discoveryTime + '\'' +
+      ", discoveryTime='" + discoveredAt + '\'' +
       '}';
   }
 }

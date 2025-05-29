@@ -10,8 +10,10 @@
     "interval_ms": 60000
   },
   "discovery": {
-    "interval_ms": 300000,
-    "batch_size": 10
+    "batch_timeout_ms": 1000,
+    "batch_size": 10,
+    "discovery_plugin_io_dir" : "/home/uttam-kamalia/Documents/goprac/go-plugin/ssh-plugin/resulttestfiles/",
+    "discovery_plugin_executable_dir" : "/home/uttam-kamalia/Documents/goprac/go-plugin/ssh-plugin/ssh_plugin"
   },
   "http": {
     "port": 10200

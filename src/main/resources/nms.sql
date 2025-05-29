@@ -32,7 +32,7 @@ CREATE TABLE motadata.credential_profile (
 CREATE TABLE motadata.discovery_profile (
     id SERIAL PRIMARY KEY,
     target TEXT,
-    credentials_profile_id INT REFERENCES motadata.credential_profile(id),
+    credentials_profile_id INT REFERENCES motadata.credential_profile(id), // todo for multiple cred profiles
     discovery_info JSONB DEFAULT '{}'::jsonb,
     created_at TIMESTAMP DEFAULT now()
 );
@@ -48,13 +48,13 @@ CREATE TABLE motadata.provisioned_devices (
     credentials_profile_id INT credential_profile(id),
 
     device_type_id INT NOT NULL REFERENCES device_catalog(id),
-    device_info JSONB DEFAULT '{}'::jsonb,
+    metadata JSONB DEFAULT '{}'::jsonb,
 
     status TEXT,                        -- PROVISIONED, NOT-PROVISIONED
     discovered_at TIMESTAMP DEFAULT now()
 );
 
-CREATE TABLE motadata.metrics (
+CREATE TABLE motadata.metric (
     id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
     device_type_id INT NOT NULL REFERENCES device_catalog(id),
@@ -73,7 +73,7 @@ CREATE TABLE motadata.metric_group (
     created_at TIMESTAMP DEFAULT now()
 );
 
-CREATE TABLE motadata.metrics (
+CREATE TABLE motadata.metrics_record (
     id SERIAL PRIMARY KEY,
     device_id INT REFERENCES provisioned_devices(id),
     metric_id INT REFERENCES metric_configs(id),

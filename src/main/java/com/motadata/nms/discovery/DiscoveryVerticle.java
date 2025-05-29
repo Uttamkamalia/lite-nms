@@ -3,7 +3,6 @@ package com.motadata.nms.discovery;
 import com.motadata.nms.discovery.context.DiscoveryContext;
 import com.motadata.nms.discovery.job.DiscoveryJob;
 import com.motadata.nms.discovery.job.DiscoveryJobFactory;
-import com.motadata.nms.discoveryprac.DiscoveryResultTracker;
 import com.motadata.nms.rest.utils.ErrorCodes;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
@@ -18,24 +17,25 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.motadata.nms.commons.RequestIdHandler.*;
-import static com.motadata.nms.datastore.utils.ConfigKeys.DISCOVERY;
-import static com.motadata.nms.datastore.utils.ConfigKeys.DISCOVERY_BATCH_SIZE;
+import static com.motadata.nms.datastore.utils.ConfigKeys.*;
 import static com.motadata.nms.discovery.context.DiscoveryContext.DISCOVERY_PROFILE_ID;
 import static com.motadata.nms.utils.EventBusChannels.*;
 
 public class DiscoveryVerticle extends AbstractVerticle {
   private static final Logger logger = LoggerFactory.getLogger(DiscoveryVerticle.class);
+  public static final String DISCOVERY_TRACKERS = "discovery-trackers";
 
   private final Map<Integer, DiscoveryResultTracker> trackers = new ConcurrentHashMap<>();
   private final Map<Integer, DiscoveryContext> discoveryContextMap = new ConcurrentHashMap<>();
-  private int batchSize;
+  private int batchSize = 1;
+  private int discoveryRequestTimeout = 10;
 
   @Override
   public void start(Promise<Void> startPromise) {
     batchSize = config().getJsonObject(DISCOVERY).getInteger(DISCOVERY_BATCH_SIZE, 1);
+    discoveryRequestTimeout = config().getJsonObject(DISCOVERY).getInteger(DISCOVERY_REQUEST_TIMEOUT_MS, 10);
 
     registerDiscoveryTriggerConsumer();
-    registerDiscoveryBatchResultConsumer();
 
     startPromise.complete();
   }
@@ -45,6 +45,9 @@ public class DiscoveryVerticle extends AbstractVerticle {
       Integer discoveryProfileId = discoverProfileIdMsg.body();
 
       requestDiscoveryContextBuild(discoveryProfileId, discoverProfileIdMsg);
+
+//      registerDiscoverySuccessResultConsumer(discoveryProfileId);
+//      registerDiscoveryFailureResultConsumer(discoveryProfileId);
     });
   }
 
@@ -70,50 +73,40 @@ public class DiscoveryVerticle extends AbstractVerticle {
       });
   }
 
-  private void registerDiscoveryBatchResultConsumer() {
-    vertx.eventBus().consumer(DISCOVERY_BATCH_RESULT.name(), message -> {
-      JsonObject result = (JsonObject) (message.body());
-      Integer discoveryProfileId = result.getInteger("discoveryProfileId");
-      String batchJobId = result.getString("batchJobId");
-      DiscoveryResultTracker tracker = trackers.get(discoveryProfileId);
-
-      if (tracker != null) {
-        if (result.containsKey("error")) {
-          tracker.addBatchFailure(batchJobId, result.getString("error"));
-        } else {
-          tracker.addBatchResult(batchJobId, result);
-        }
-      }
-      if (tracker.allBatchesProcessed()) {
-        JsonObject finalResult = new JsonObject()
-          .put("discoveryProfileId", discoveryProfileId);
-//           .put("success", new JsonArray((List) tracker.getSuccessBatchResults()));
-//           .put("batchResults", new JsonArray(tracker.getSuccessBatchResults()));
-
-        vertx.eventBus().publish("discovery.result." + discoveryProfileId, finalResult);
-        trackers.remove(discoveryProfileId);
-      }
-    });
-  }
-
   private void processDiscoveryContext(JsonObject contextJson) {
     DiscoveryContext context = DiscoveryContext.fromJson(contextJson);
-    discoveryContextMap.put(context.getDiscoveryProfileId(), context);
+    Integer discoveryProfileId = context.getDiscoveryProfileId();
+
+    DiscoveryResultTracker tracker = new DiscoveryResultTracker(discoveryProfileId, context.getTargetIps().size(), DISCOVERY_RESPONSE.withId(discoveryProfileId), discoveryRequestTimeout);
+    TrackerStore.getInstance().put(discoveryProfileId, tracker);
+//    vertx.sharedData().getLocalMap(DISCOVERY_TRACKERS).put(discoveryProfileId, tracker); not serializable
+
+    registerDiscoverySuccessResultConsumer(discoveryProfileId);
+    registerDiscoveryFailureResultConsumer(discoveryProfileId);
     batchAndSendToBatchProcessor(context);
   }
 
   private void batchAndSendToBatchProcessor(DiscoveryContext context) {
-    DiscoveryResultTracker tracker = new DiscoveryResultTracker(context.getTargetIps().size());
-    trackers.put(context.getDiscoveryProfileId(), tracker);
-
     List<String> targetIps = new ArrayList<>(context.getTargetIps());
     while (!targetIps.isEmpty()) {
       List<String> batch = new ArrayList<>(targetIps.subList(0, Math.min(batchSize, targetIps.size())));
       targetIps.removeAll(batch);
       DiscoveryJob batchJob = DiscoveryJobFactory.create(batch, context);
       vertx.eventBus().send(DISCOVERY_BATCH.name(), batchJob);
-
-      logger.info("Batch added with total:" + tracker.addBatch());
     }
+  }
+
+  private void registerDiscoverySuccessResultConsumer(Integer discoveryProfileId) {
+    DiscoveryResultTracker tracker = TrackerStore.getInstance().get(discoveryProfileId);
+    vertx.eventBus().<JsonObject>consumer(DISCOVERY_BATCH_RESULT_SUCCESSFUL.withId(discoveryProfileId), successfulIpMsg -> {
+      tracker.addSuccess(successfulIpMsg.body().getString("ip"));
+    });
+  }
+
+  private void registerDiscoveryFailureResultConsumer(Integer discoveryProfileId) {
+    DiscoveryResultTracker tracker = TrackerStore.getInstance().get(discoveryProfileId);
+    vertx.eventBus().<JsonObject>consumer(DISCOVERY_BATCH_RESULT_FAILED.withId(discoveryProfileId), failedIpMsg -> {
+      tracker.addFailure(failedIpMsg.body().getString("ip"), failedIpMsg.body().getString("error"));
+    });
   }
 }

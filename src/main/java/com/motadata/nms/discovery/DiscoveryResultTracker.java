@@ -1,47 +1,81 @@
-package com.motadata.nms.discoveryprac;
+package com.motadata.nms.discovery;
 
+import com.motadata.nms.commons.VertxProvider;
+import com.motadata.nms.rest.utils.ErrorCodes;
+import com.motadata.nms.utils.EventBusChannels;
+import io.vertx.core.eventbus.Message;
+import io.vertx.core.impl.logging.Logger;
+import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static com.motadata.nms.utils.EventBusChannels.DISCOVERY_RESPONSE;
 
 
 public class DiscoveryResultTracker {
-  private final int totalDevices;
-  private final AtomicInteger completedDevices = new AtomicInteger(0);
+  private static final Logger logger = LoggerFactory.getLogger(DiscoveryResultTracker.class);
 
-  private final List<String> successfulIps = Collections.synchronizedList(new ArrayList<>());
+  private final Integer totalDevices;
+  private final Integer discoveryProfileId;
+  private final String discoveryResponseEventBusChannel;
+  private final Integer discoveryRequestTimeout;
+  private final List<String> successfulIps = new CopyOnWriteArrayList<>();
   private final Map<String, String> failedIps = new ConcurrentHashMap<>();
 
-  private final Map<String, JsonObject> batchResults = new ConcurrentHashMap<>();
-  private final Map<String, JsonObject> failedBatchResults = new ConcurrentHashMap<>();
-  private final AtomicInteger totalBatches = new AtomicInteger(0);
-  private final AtomicInteger completedBatches = new AtomicInteger(0);
 
-  public DiscoveryResultTracker(int totalDevices) {
+  public DiscoveryResultTracker(Integer discoveryProfileId, Integer totalDevices, String discoveryResponseEventBusChannel, Integer discoveryRequestTimeout) {
+    this.discoveryProfileId = discoveryProfileId;
     this.totalDevices = totalDevices;
+    this.discoveryResponseEventBusChannel = discoveryResponseEventBusChannel;
+    this.discoveryRequestTimeout = discoveryRequestTimeout;
+
+    registerDiscoveryRequestTimeout();
   }
 
   public void addSuccess(String ip) {
     successfulIps.add(ip);
-    completedDevices.incrementAndGet();
+    if (isResultComplete()) {
+      sendDiscoveryResponse();
+    }
   }
 
   public void addFailure(String ip, String reason) {
     failedIps.put(ip, reason);
-    completedDevices.incrementAndGet();
+    if (isResultComplete()) {
+      sendDiscoveryResponse();
+    }
   }
 
-  public boolean isBatchFilled(int batchSize) {
-    return successfulIps.size() >= batchSize;
+  public boolean isResultComplete() {
+    return successfulIps.size() + failedIps.size() == totalDevices;
   }
 
-  public List<String> getSuccessfulBatch(int batchSize){
-     List<String> batch =  this.successfulIps.subList(0, batchSize);
-     this.successfulIps.removeAll(batch);
-     this.totalBatches.getAndIncrement();
-     return batch;
+  private void sendDiscoveryResponse() {
+    JsonObject result = new JsonObject()
+      .put("discoveryProfileId", discoveryProfileId)
+      .put("success", new JsonArray(successfulIps));
+
+    JsonArray failedIpsWithReason = new JsonArray();
+    failedIps
+      .entrySet()
+      .forEach(entry -> failedIpsWithReason.add(new JsonObject().put("ip", entry.getKey()).put("reason", entry.getValue())));
+
+    result.put("failed", failedIpsWithReason);
+
+    VertxProvider.getVertx().eventBus().send(discoveryResponseEventBusChannel, result);
+  }
+
+  private void registerDiscoveryRequestTimeout() {
+
+    VertxProvider.getVertx().timer(discoveryRequestTimeout).onComplete(id -> {
+      logger.info("Discovery request timed out with "+discoveryRequestTimeout+"ms for discovery-profile-id:" + discoveryProfileId);
+      sendDiscoveryResponse();
+    });
   }
 
   public List<String> getSuccessfulIps() {
@@ -50,34 +84,5 @@ public class DiscoveryResultTracker {
 
   public Map<String, String> getFailures() {
     return failedIps;
-  }
-
-
-  public Integer addBatch(){
-    return this.totalBatches.incrementAndGet();
-  }
-
-  public void addBatchResult(String batchJobId, JsonObject result) {
-    batchResults.put(batchJobId, result);
-    completedBatches.incrementAndGet();
-  }
-
-  public void addBatchFailure(String batchJobId, String error) {
-    JsonObject failure = new JsonObject()
-      .put("error", error);
-    failedBatchResults.put(batchJobId, failure);
-    completedBatches.incrementAndGet();
-  }
-
-  public boolean allBatchesProcessed() {
-    return completedBatches.get() >= totalBatches.get();
-  }
-
-  public Collection<JsonObject> getSuccessBatchResults() {
-    return batchResults.values();
-  }
-
-  public Collection<JsonObject> getFailedBatchResults() {
-    return failedBatchResults.values();
   }
 }

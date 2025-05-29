@@ -11,4 +11,5 @@ public class ErrorCodes {
 
   public static final String DAO_ERROR = "[DAO_ERROR] ";
   public static final String REST_HANDLER_ERROR = "[REST_HANDLER_ERROR] ";
+  public static final int REQUEST_TIMEOUT = 11;
 }

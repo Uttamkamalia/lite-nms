@@ -3,7 +3,6 @@ package com.motadata.nms.rest.handlers;
 import com.motadata.nms.commons.RequestIdHandler;
 import com.motadata.nms.commons.VertxProvider;
 import com.motadata.nms.models.DiscoveryProfile;
-import com.motadata.nms.models.credential.CredentialProfile;
 import com.motadata.nms.rest.utils.ErrorHandler;
 import com.motadata.nms.rest.utils.RestUtils;
 import io.vertx.core.Vertx;
@@ -110,16 +109,22 @@ public class DiscoveryProfileApiHandler {
     vertx.eventBus()
       .request(DISCOVERY_TRIGGER.name(), discoveryProfileId, getRequestIdDeliveryOpts(requestId), discoverySummaryReply -> {
 
-        vertx.eventBus().consumer(DISCOVERY_RESULT.withId(discoveryProfileId) , discoveryResultMsg -> {
-
-          JsonObject result = (JsonObject) discoveryResultMsg.body();
-          System.out.println("Final result: " + result.encodePrettily());
-          log.info("Final result: " + result.encodePrettily());
-
-          ctx.response()
-            .putHeader(CONTENT_TYPE, APPLICATION_JSON)
-            .end(result.encodePrettily());
-        });
+        if (discoverySummaryReply.succeeded()) {
+          registerDiscoveryResponseConsumer(ctx, discoveryProfileId);
+        } else {
+          ErrorHandler.respondError(ctx, discoverySummaryReply.cause());
+        }
       });
+  }
+
+  private void registerDiscoveryResponseConsumer(RoutingContext ctx, Integer discoveryProfileId) {
+    vertx.eventBus().<JsonObject>consumer(DISCOVERY_RESPONSE.withId(discoveryProfileId) , discoveryResultMsg -> {
+      JsonObject result = discoveryResultMsg.body();
+      log.info("Final result: " + result.encodePrettily());
+
+      ctx.response()
+        .putHeader(CONTENT_TYPE, APPLICATION_JSON)
+        .end(result.encodePrettily());
+    });
   }
 }
