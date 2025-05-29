@@ -278,7 +278,7 @@ public class DatabaseVerticle extends AbstractVerticle {
       .handler(msg -> {
         if(msg.body() instanceof ProvisionedDevice provisionedDevice){
           provisionedDeviceDAO.save(provisionedDevice)
-            .onSuccess(savedId -> msg.reply(new JsonObject().put("id", savedId)))
+            .onSuccess(savedId -> msg.reply(""))
             .onFailure(err -> ErrorHandler.replyFailure(msg, logger, err));
         }
       });

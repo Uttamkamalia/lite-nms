@@ -12,6 +12,7 @@ import io.vertx.core.json.JsonObject;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.motadata.nms.utils.EventBusChannels.DISCOVERY_RESPONSE;
@@ -72,8 +73,8 @@ public class DiscoveryResultTracker {
 
   private void registerDiscoveryRequestTimeout() {
 
-    VertxProvider.getVertx().timer(discoveryRequestTimeout).onComplete(id -> {
-      logger.info("Discovery request timed out with "+discoveryRequestTimeout+"ms for discovery-profile-id:" + discoveryProfileId);
+    VertxProvider.getVertx().timer(discoveryRequestTimeout, TimeUnit.SECONDS).onComplete(id -> {
+      logger.info("Discovery request timed out with "+discoveryRequestTimeout+" seconds for discovery-profile-id:" + discoveryProfileId);
       sendDiscoveryResponse();
     });
   }

@@ -30,7 +30,7 @@ public enum EventBusChannels {
   DISCOVERY_BATCH_RESULT("discovery.batch.result.successful"),
   DISCOVERY_BATCH_RESULT_SUCCESSFUL("discovery.batch.result.successful"),
   DISCOVERY_BATCH_RESULT_FAILED("discovery.batch.result.failed"),
-  DISCOVERY_RESPONSE("discovery.response."),
+  DISCOVERY_RESPONSE("discovery.response"),
 
   // Encryption Channels
   ENCRYPT_PASSWORD("encryption.password"),

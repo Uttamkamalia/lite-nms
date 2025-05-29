@@ -33,7 +33,7 @@ public class DiscoveryVerticle extends AbstractVerticle {
   @Override
   public void start(Promise<Void> startPromise) {
     batchSize = config().getJsonObject(DISCOVERY).getInteger(DISCOVERY_BATCH_SIZE, 1);
-    discoveryRequestTimeout = config().getJsonObject(DISCOVERY).getInteger(DISCOVERY_REQUEST_TIMEOUT_MS, 10);
+    discoveryRequestTimeout = config().getJsonObject(DISCOVERY).getInteger(DISCOVERY_REQUEST_TIMEOUT, 10);
 
     registerDiscoveryTriggerConsumer();
 
@@ -45,6 +45,7 @@ public class DiscoveryVerticle extends AbstractVerticle {
       Integer discoveryProfileId = discoverProfileIdMsg.body();
 
       requestDiscoveryContextBuild(discoveryProfileId, discoverProfileIdMsg);
+      discoverProfileIdMsg.reply("Discovery triggered");
 
 //      registerDiscoverySuccessResultConsumer(discoveryProfileId);
 //      registerDiscoveryFailureResultConsumer(discoveryProfileId);
@@ -98,8 +99,8 @@ public class DiscoveryVerticle extends AbstractVerticle {
 
   private void registerDiscoverySuccessResultConsumer(Integer discoveryProfileId) {
     DiscoveryResultTracker tracker = TrackerStore.getInstance().get(discoveryProfileId);
-    vertx.eventBus().<JsonObject>consumer(DISCOVERY_BATCH_RESULT_SUCCESSFUL.withId(discoveryProfileId), successfulIpMsg -> {
-      tracker.addSuccess(successfulIpMsg.body().getString("ip"));
+    vertx.eventBus().<String>consumer(DISCOVERY_BATCH_RESULT_SUCCESSFUL.withId(discoveryProfileId), successfulIpMsg -> {
+      tracker.addSuccess(successfulIpMsg.body());
     });
   }
 

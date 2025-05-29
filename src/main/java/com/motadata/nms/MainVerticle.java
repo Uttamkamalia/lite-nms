@@ -12,6 +12,7 @@ import com.motadata.nms.discovery.job.SnmpDiscoveryJob;
 import com.motadata.nms.discovery.job.SshDiscoveryJob;
 import com.motadata.nms.models.DeviceType;
 import com.motadata.nms.models.DiscoveryProfile;
+import com.motadata.nms.models.ProvisionedDevice;
 import com.motadata.nms.models.credential.Credential;
 import com.motadata.nms.models.credential.CredentialProfile;
 import com.motadata.nms.models.credential.SnmpCredential;
@@ -69,26 +70,42 @@ public class MainVerticle extends AbstractVerticle {
     vertx.eventBus().registerDefaultCodec(DiscoveryProfile.class, new GenericJacksonCodec<>(DiscoveryProfile.class));
     vertx.eventBus().registerDefaultCodec(SshDiscoveryJob.class, new GenericJacksonCodec<>(SshDiscoveryJob.class));
     vertx.eventBus().registerDefaultCodec(SnmpDiscoveryJob.class, new GenericJacksonCodec<>(SnmpDiscoveryJob.class));
+    vertx.eventBus().registerDefaultCodec(ProvisionedDevice.class, new GenericJacksonCodec<>(ProvisionedDevice.class));
     logger.info("Event bus codecs registered.");
     return Future.succeededFuture();
   }
 
   private Future<Void> deployVerticles(JsonObject config) {
-    DeploymentOptions workerOptions = new DeploymentOptions()
+    DeploymentOptions dbWorkerOptions = new DeploymentOptions()
       .setConfig(config)
       .setWorker(true)
+      .setInstances(5)
       .setWorkerPoolSize(5)
-      .setWorkerPoolName("nms-worker-pool");
+      .setWorkerPoolName("db-worker-pool");
+
+    DeploymentOptions discWorkerOptions = new DeploymentOptions()
+      .setConfig(config)
+      .setWorker(true)
+      .setWorkerPoolSize(1)
+      .setInstances(1)
+      .setWorkerPoolName("disc-worker-pool");
+
+    DeploymentOptions bWorkerOptions = new DeploymentOptions()
+      .setConfig(config)
+      .setWorker(true)
+      .setWorkerPoolSize(1)
+      .setInstances(1)
+      .setWorkerPoolName("batch-worker-pool");
 
     DeploymentOptions standardOptions = new DeploymentOptions()
       .setConfig(config);
 
     return Future.succeededFuture()
-      .compose(v -> vertx.deployVerticle(new DatabaseVerticle(), workerOptions))
-      .compose(depId -> vertx.deployVerticle(new DiscoveryVerticle(), standardOptions))
-      .compose(depId -> vertx.deployVerticle(new DiscoveryContextBuilderVerticle(), workerOptions))
-      .compose(depId -> vertx.deployVerticle(new BatchProcessorVerticle(), workerOptions))
-      .compose(depId -> vertx.deployVerticle(new ApiVerticle(), standardOptions))
+      .compose(v -> vertx.deployVerticle(DatabaseVerticle.class.getName(), standardOptions))
+      .compose(depId -> vertx.deployVerticle(DiscoveryVerticle.class.getName(), standardOptions))
+      .compose(depId -> vertx.deployVerticle( DiscoveryContextBuilderVerticle.class.getName(), discWorkerOptions))
+      .compose(depId -> vertx.deployVerticle( BatchProcessorVerticle.class.getName(), bWorkerOptions))
+      .compose(depId -> vertx.deployVerticle( ApiVerticle.class.getName(), standardOptions))
       .compose(depId -> {
         logger.info("All verticles deployed successfully.");
         return Future.succeededFuture();

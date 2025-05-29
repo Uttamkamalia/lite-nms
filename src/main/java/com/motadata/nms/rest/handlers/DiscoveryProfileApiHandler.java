@@ -110,6 +110,7 @@ public class DiscoveryProfileApiHandler {
       .request(DISCOVERY_TRIGGER.name(), discoveryProfileId, getRequestIdDeliveryOpts(requestId), discoverySummaryReply -> {
 
         if (discoverySummaryReply.succeeded()) {
+          logger.info("Discovery trigger with discovery-profile-id:"+discoveryProfileId);
           registerDiscoveryResponseConsumer(ctx, discoveryProfileId);
         } else {
           ErrorHandler.respondError(ctx, discoverySummaryReply.cause());

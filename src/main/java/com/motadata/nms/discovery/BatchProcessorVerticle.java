@@ -31,7 +31,7 @@ public class BatchProcessorVerticle extends AbstractVerticle {
       DiscoveryJob batchJob = (DiscoveryJob) message.body();
 
       String inputFile = pluginIODir + batchJob.getInputFileName();
-      String resultFile = pluginIODir + "result.json";
+      String resultFile = pluginIODir + "result-"+batchJob.getId()+".json";
 
       JsonObject result;
       Process process = null;
@@ -42,9 +42,10 @@ public class BatchProcessorVerticle extends AbstractVerticle {
 
         // Write the input file
         Files.write(Paths.get(inputFile), batchJob.toSerializedJson().getBytes());
+//        Files.createFile(Paths.get(resultFile));
 
         // Start the Go plugin process
-        process = new ProcessBuilder(pluginExecutableDir, inputFile).start();
+        process = new ProcessBuilder(pluginExecutableDir, inputFile,resultFile).start();
         long discoveryBatchTimeout = config()
           .getJsonObject(ConfigKeys.DISCOVERY)
           .getInteger(DISCOVERY_BATCH_TIMEOUT_MS, 30000);
@@ -123,9 +124,12 @@ public class BatchProcessorVerticle extends AbstractVerticle {
   }
 
   private void processFailedDevicesAfterSuccessfulPluginExecution(JsonObject result){
+    if(result.getJsonArray("failedDevices")==null){
+      return;
+    }
     Integer discoveryProfileId = result.getInteger("discoveryProfileId");
 
-    JsonArray failedDevices = result.getJsonArray("failed");
+    JsonArray failedDevices = result.getJsonArray("failedDevices");
     if(failedDevices!=null){
       failedDevices.stream().map(obj -> (JsonObject)obj).forEach(failedDevice -> {
         JsonObject failedDeviceJson = new JsonObject();
@@ -150,6 +154,9 @@ public class BatchProcessorVerticle extends AbstractVerticle {
   }
 
   private void processSuccessfulDiscoveryBatchResult(JsonObject result, DiscoveryJob job){
+    if(result.getJsonArray("successfulDevices")==null){
+      return;
+    }
 
     result.getJsonArray("successfulDevices").forEach(obj -> {
       JsonObject device = (JsonObject) obj;
@@ -166,7 +173,8 @@ public class BatchProcessorVerticle extends AbstractVerticle {
       provisionedDevice.setIpAddress(ip);
       provisionedDevice.setPort(port);
       provisionedDevice.setProtocol(protocol);
-      provisionedDevice.setDeviceTypeId(100); //TODO
+      provisionedDevice.setDeviceTypeId(1); //TODO
+      provisionedDevice.setDiscoveryProfileId(job.getDiscoveryProfileId());
       provisionedDevice.setCredentialProfileId(job.getCredentialProfileId());
       provisionedDevice.setMetadata(new JsonObject());
       provisionedDevice.setStatus("PROVISIONED");

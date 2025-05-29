@@ -33,8 +33,8 @@ public class ProvisionedDeviceDAO {
   public Future<Integer> save(ProvisionedDevice device) {
     String query = "INSERT INTO motadata.provisioned_devices " +
                    "(ip, port, protocol, discovery_profile_id, credentials_profile_id, " +
-                   "device_type_id, metadata, status, discovered_at) " +
-                   "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) " +
+                   "device_type_id, metadata, status) " +
+                   "VALUES ($1, $2, $3, $4, $5, $6, $7, $8) " +
                    "RETURNING id";
 
     return pool.preparedQuery(query)
@@ -44,10 +44,9 @@ public class ProvisionedDeviceDAO {
         device.getProtocol(),
         device.getDiscoveryProfileId(),
         device.getCredentialProfileId(),
-        device.getDeviceTypeId(),
+        device.getDeviceTypeId() != null ? device.getDeviceTypeId() : 1,
         device.getMetadata() != null ? device.getMetadata() : new JsonObject(),
-        device.getStatus(),
-        device.getDiscoveredAt() != null ? device.getDiscoveredAt() : Instant.now()
+        device.getStatus()
       ))
       .map(rs -> {
         if (rs.iterator().hasNext()) {

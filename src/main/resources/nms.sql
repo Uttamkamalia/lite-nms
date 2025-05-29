@@ -44,8 +44,8 @@ CREATE TABLE motadata.provisioned_devices (
     port INT,
     protocol TEXT,
 
-    discovery_profile_id INT discovery_profile(id), -- think abt removing
-    credentials_profile_id INT credential_profile(id),
+    discovery_profile_id INT NOT NULL REFERENCES discovery_profile(id), -- think abt removing
+    credentials_profile_id INT NOT NULL REFERENCES credential_profile(id),
 
     device_type_id INT NOT NULL REFERENCES device_catalog(id),
     metadata JSONB DEFAULT '{}'::jsonb,
