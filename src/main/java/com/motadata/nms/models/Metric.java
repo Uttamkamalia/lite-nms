@@ -7,6 +7,8 @@ import static com.motadata.nms.rest.utils.ErrorCodes.BAD_REQUEST;
 public class Metric {
     private Integer id;
     private String name;
+    private String metricType; // New field for COUNTER, GAUGE, etc.
+    private String metricUnit; // New field for bytes, seconds, etc.
     private Integer deviceTypeId;
     private String protocol;
     private String pluginId;
@@ -16,14 +18,16 @@ public class Metric {
     }
 
     // Constructor without ID
-    public Metric(String name, Integer deviceTypeId, String protocol, String pluginId) {
-        this(null, name, deviceTypeId, protocol, pluginId);
+    public Metric(String name, String metricType, String metricUnit, Integer deviceTypeId, String protocol, String pluginId) {
+        this(null, name, metricType, metricUnit, deviceTypeId, protocol, pluginId);
     }
 
     // Full constructor
-    public Metric(Integer id, String name, Integer deviceTypeId, String protocol, String pluginId) {
+    public Metric(Integer id, String name, String metricType, String metricUnit, Integer deviceTypeId, String protocol, String pluginId) {
         this.id = id;
         this.name = name;
+        this.metricType = metricType;
+        this.metricUnit = metricUnit;
         this.deviceTypeId = deviceTypeId;
         this.protocol = protocol;
         this.pluginId = pluginId;
@@ -44,6 +48,22 @@ public class Metric {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getMetricType() {
+        return metricType;
+    }
+
+    public void setMetricType(String metricType) {
+        this.metricType = metricType;
+    }
+
+    public String getMetricUnit() {
+        return metricUnit;
+    }
+
+    public void setMetricUnit(String metricUnit) {
+        this.metricUnit = metricUnit;
     }
 
     public Integer getDeviceTypeId() {
@@ -74,6 +94,8 @@ public class Metric {
     public JsonObject toJson() {
         JsonObject json = new JsonObject()
             .put("name", name)
+            .put("metric_type", metricType)
+            .put("metric_unit", metricUnit)
             .put("device_type_id", deviceTypeId)
             .put("protocol", protocol)
             .put("plugin_id", pluginId);
@@ -99,6 +121,16 @@ public class Metric {
                 throw new NMSException(BAD_REQUEST, "Metric name is required");
             }
 
+            String metricType = json.getString("metric_type");
+            if (metricType == null || metricType.isEmpty()) {
+                throw new NMSException(BAD_REQUEST, "Metric type is required");
+            }
+
+            String metricUnit = json.getString("metric_unit");
+            if (metricUnit == null || metricUnit.isEmpty()) {
+                throw new NMSException(BAD_REQUEST, "Metric unit is required");
+            }
+
             Integer deviceTypeId = json.getInteger("device_type_id");
             if (deviceTypeId == null) {
                 throw new NMSException(BAD_REQUEST, "Device type ID is required");
@@ -114,7 +146,7 @@ public class Metric {
                 throw new NMSException(BAD_REQUEST, "Plugin ID is required");
             }
 
-            return new Metric(id, name, deviceTypeId, protocol, pluginId);
+            return new Metric(id, name, metricType, metricUnit, deviceTypeId, protocol, pluginId);
         } catch (NMSException e) {
             throw e;
         } catch (Exception e) {
@@ -127,6 +159,8 @@ public class Metric {
         return "Metric{" +
             "id=" + id +
             ", name='" + name + '\'' +
+            ", metricType='" + metricType + '\'' +
+            ", metricUnit='" + metricUnit + '\'' +
             ", deviceTypeId=" + deviceTypeId +
             ", protocol='" + protocol + '\'' +
             ", pluginId='" + pluginId + '\'' +

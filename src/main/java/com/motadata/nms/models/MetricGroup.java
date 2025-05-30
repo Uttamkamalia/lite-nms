@@ -13,7 +13,7 @@ import static com.motadata.nms.rest.utils.ErrorCodes.BAD_REQUEST;
 public class MetricGroup {
   private Integer id;
   private String name;
-  private List<String> metrics;
+  private List<Integer> metrics;
   private Integer deviceTypeId;
   private Integer pollingIntervalSeconds;
   private Instant lastPolledAt;
@@ -28,7 +28,7 @@ public class MetricGroup {
   }
 
   // Constructor without ID
-  public MetricGroup(String name, List<String> metrics, Integer deviceTypeId) {
+  public MetricGroup(String name, List<Integer> metrics, Integer deviceTypeId) {
     this();
     this.name = name;
     this.metrics = metrics;
@@ -36,7 +36,7 @@ public class MetricGroup {
   }
 
   // Full constructor
-  public MetricGroup(Integer id, String name, List<String> metrics, Integer deviceTypeId,
+  public MetricGroup(Integer id, String name, List<Integer> metrics, Integer deviceTypeId,
                     Integer pollingIntervalSeconds, Instant lastPolledAt, String status, Instant createdAt) {
     this.id = id;
     this.name = name;
@@ -65,11 +65,11 @@ public class MetricGroup {
     this.name = name;
   }
 
-  public List<String> getMetrics() {
+  public List<Integer> getMetrics() {
     return metrics;
   }
 
-  public void setMetrics(List<String> metrics) {
+  public void setMetrics(List<Integer> metrics) {
     this.metrics = metrics;
   }
 
@@ -159,9 +159,9 @@ public class MetricGroup {
         throw new NMSException(BAD_REQUEST, "Metrics list cannot be empty");
       }
 
-      List<String> metrics = new ArrayList<>();
+      List<Integer> metrics = new ArrayList<>();
       for (int i = 0; i < metricsArray.size(); i++) {
-        metrics.add(metricsArray.getString(i));
+        metrics.add(metricsArray.getInteger(i));
       }
       metricGroup.setMetrics(metrics);
 

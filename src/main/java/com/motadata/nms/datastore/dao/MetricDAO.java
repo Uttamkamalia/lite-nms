@@ -20,19 +20,21 @@ import static com.motadata.nms.rest.utils.ErrorCodes.DAO_ERROR;
 public class MetricDAO {
     private static final Logger log = LoggerFactory.getLogger(MetricDAO.class);
     private final Pool pool;
-    
+
     public MetricDAO(Pool pool) {
         this.pool = pool;
     }
-    
+
     // Create
     public Future<Integer> save(Metric metric) {
-        String query = "INSERT INTO motadata.metric (name, device_type_id, protocol, plugin_id) " +
-                       "VALUES ($1, $2, $3, $4) RETURNING id";
-        
+        String query = "INSERT INTO motadata.metric (name, metric_type, metric_unit, device_type_id, protocol, plugin_id) " +
+                       "VALUES ($1, $2, $3, $4, $5, $6) RETURNING id";
+
         return pool.preparedQuery(query)
             .execute(Tuple.of(
                 metric.getName(),
+                metric.getMetricType(),
+                metric.getMetricUnit(),
                 metric.getDeviceTypeId(),
                 metric.getProtocol(),
                 metric.getPluginId()
@@ -51,18 +53,18 @@ public class MetricDAO {
                 return Future.failedFuture(NMSException.internal(errMsg, err));
             });
     }
-    
+
     // Read single
     public Future<JsonObject> get(Integer id) {
         String query = "SELECT * FROM motadata.metric WHERE id = $1";
-        
+
         return pool.preparedQuery(query)
             .execute(Tuple.of(id))
             .compose(rowSet -> {
                 if (rowSet == null || !rowSet.iterator().hasNext()) {
                     return Future.failedFuture(NMSException.notFound(DAO_ERROR + "Metric not found with id: " + id));
                 }
-                
+
                 try {
                     Row row = rowSet.iterator().next();
                     return Future.succeededFuture(RowMapper.mapRowToJson(row));
@@ -72,11 +74,11 @@ public class MetricDAO {
             })
             .recover(err -> Future.failedFuture(NMSException.internal(DAO_ERROR + "Failed to query metric with id: " + id, err)));
     }
-    
+
     // Read all
     public Future<JsonArray> getAll() {
         String query = "SELECT * FROM motadata.metric";
-        
+
         return pool.preparedQuery(query)
             .execute()
             .compose(rs -> {
@@ -90,11 +92,11 @@ public class MetricDAO {
             })
             .recover(err -> Future.failedFuture(NMSException.internal(DAO_ERROR + "Failed to query all metrics", err)));
     }
-    
+
     // Get metrics by device type
     public Future<JsonArray> getByDeviceType(Integer deviceTypeId) {
         String query = "SELECT * FROM motadata.metric WHERE device_type_id = $1";
-        
+
         return pool.preparedQuery(query)
             .execute(Tuple.of(deviceTypeId))
             .compose(rs -> {
@@ -108,18 +110,21 @@ public class MetricDAO {
             })
             .recover(err -> Future.failedFuture(NMSException.internal(DAO_ERROR + "Failed to query metrics for device type: " + deviceTypeId, err)));
     }
-    
+
     // Update
     public Future<Integer> update(Metric metric) {
         if (metric.getId() == null) {
             return Future.failedFuture(NMSException.badRequest("Metric ID is required for update"));
         }
-        
-        String query = "UPDATE motadata.metric SET name = $1, device_type_id = $2, protocol = $3, plugin_id = $4 WHERE id = $5";
-        
+
+        String query = "UPDATE motadata.metric SET name = $1, metric_type = $2, metric_unit = $3, " +
+                       "device_type_id = $4, protocol = $5, plugin_id = $6 WHERE id = $7";
+
         return pool.preparedQuery(query)
             .execute(Tuple.of(
                 metric.getName(),
+                metric.getMetricType(),
+                metric.getMetricUnit(),
                 metric.getDeviceTypeId(),
                 metric.getProtocol(),
                 metric.getPluginId(),
@@ -137,11 +142,11 @@ public class MetricDAO {
                 return Future.failedFuture(NMSException.internal(errMsg, err));
             });
     }
-    
+
     // Delete
     public Future<Integer> delete(Integer id) {
         String query = "DELETE FROM motadata.metric WHERE id = $1";
-        
+
         return pool.preparedQuery(query)
             .execute(Tuple.of(id))
             .map(rs -> {

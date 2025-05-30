@@ -263,6 +263,12 @@ public class DatabaseVerticle extends AbstractVerticle {
           .onFailure(err -> ErrorHandler.replyFailure(msg, logger, err));
       });
 
+    vertx.eventBus().<Integer>consumer(METRIC_GROUP_GET_WITH_DETAILS.name())
+      .handler(msg -> {
+        metricGroupDAO.getMetricGroupWithDetails(msg.body())
+          .onSuccess(msg::reply)
+          .onFailure(err -> ErrorHandler.replyFailure(msg, logger, err));
+      });
 
     vertx.eventBus().consumer(METRIC_GROUP_DELETE.name())
       .handler(msg -> {

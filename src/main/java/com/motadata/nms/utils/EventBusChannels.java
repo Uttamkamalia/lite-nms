@@ -50,6 +50,8 @@ public enum EventBusChannels {
   METRIC_GROUP_GET("metric.group.get"),
   METRIC_GROUP_GET_ALL("metric.group.get.all"),
   METRIC_GROUP_GET_BY_DEVICE_TYPE("metric.group.get.by.device.type"),
+  METRIC_GROUP_GET_WITH_DETAILS("metric.group.get-by-device-type"),
+  METRIC_GROUP_GET_ALL_WITH_DETAILS("metric.group.all.get-by-device-type"),
   METRIC_GROUP_UPDATE("metric.group.update"),
   METRIC_GROUP_UPDATE_STATUS("metric.group.update.status"),
   METRIC_GROUP_DELETE("metric.group.delete"),
@@ -62,7 +64,9 @@ public enum EventBusChannels {
   PROVISIONED_DEVICE_GET_BY_DISCOVERY_PROFILE("provisioned.device.get.by.discovery.profile"),
   PROVISIONED_DEVICE_UPDATE("provisioned.device.update"),
   PROVISIONED_DEVICE_UPDATE_STATUS("provisioned.device.update.status"),
-  PROVISIONED_DEVICE_DELETE("provisioned.device.delete");
+  PROVISIONED_DEVICE_DELETE("provisioned.device.delete"),
+
+  METRIC_GROUP_POLLING_TRIGGER("metric.group.polling.trigger");
 
     private static String SEPERATOR = ".";
     private String name;

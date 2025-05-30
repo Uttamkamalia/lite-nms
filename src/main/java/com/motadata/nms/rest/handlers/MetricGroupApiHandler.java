@@ -24,11 +24,44 @@ public class MetricGroupApiHandler {
   public void registerRoutes(Router router) {
     router.post("/metric-group").handler(this::createMetricGroup);
     router.get("/metric-group/:id").handler(this::getMetricGroup);
+    router.get("/metric-group-details/:id").handler(this::getMetricGroupDetails);
     router.get("/metric-group").handler(this::getAllMetricGroups);
     router.get("/metric-group/device-type/:deviceTypeId").handler(this::getMetricGroupsByDeviceType);
     router.put("/metric-group/:id").handler(this::updateMetricGroup);
     router.put("/metric-group/:id/status").handler(this::updateMetricGroupStatus);
     router.delete("/metric-group/:id").handler(this::deleteMetricGroup);
+    router.delete("/metric-group/poll/trigger/:id").handler(this::triggerMetricGroupPolling);
+  }
+
+  private void triggerMetricGroupPolling(RoutingContext routingContext) {
+    String requestId = routingContext.get(RequestIdHandler.REQUEST_ID_KEY);
+    Integer id = RestUtils.parseAndRespond(routingContext, "id", Integer::parseInt, "Metric Group ID cannot be null");
+
+    vertx.eventBus().request(METRIC_GROUP_POLLING_TRIGGER.name(), id, getRequestIdDeliveryOpts(requestId), reply -> {
+      if (reply.succeeded()) {
+        routingContext.response()
+                .putHeader(CONTENT_TYPE, APPLICATION_JSON)
+                .end(reply.result().body().toString());
+      } else {
+        ErrorHandler.respondError(routingContext, reply.cause());
+      }
+    });
+  }
+
+
+  private void getMetricGroupDetails(RoutingContext routingContext) {
+    String requestId = routingContext.get(RequestIdHandler.REQUEST_ID_KEY);
+    Integer id = RestUtils.parseAndRespond(routingContext, "id", Integer::parseInt, "Metric Group ID cannot be null");
+
+    vertx.eventBus().request(METRIC_GROUP_GET_WITH_DETAILS.name(), id, getRequestIdDeliveryOpts(requestId), reply -> {
+      if (reply.succeeded()) {
+        routingContext.response()
+          .putHeader(CONTENT_TYPE, APPLICATION_JSON)
+          .end(reply.result().body().toString());
+      } else {
+        ErrorHandler.respondError(routingContext, reply.cause());
+      }
+    });
   }
 
   private void createMetricGroup(RoutingContext ctx) {
@@ -93,10 +126,10 @@ public class MetricGroupApiHandler {
   private void updateMetricGroup(RoutingContext ctx) {
     String requestId = ctx.get(RequestIdHandler.REQUEST_ID_KEY);
     Integer id = RestUtils.parseAndRespond(ctx, "id", Integer::parseInt, "Metric Group ID cannot be null");
-    
+
     JsonObject body = ctx.body().asJsonObject();
     body.put("id", id); // Ensure ID from path is used
-    
+
     MetricGroup metricGroup = MetricGroup.fromJson(body);
 
     vertx.eventBus().request(METRIC_GROUP_UPDATE.name(), metricGroup, getRequestIdDeliveryOpts(requestId), reply -> {
@@ -113,15 +146,15 @@ public class MetricGroupApiHandler {
   private void updateMetricGroupStatus(RoutingContext ctx) {
     String requestId = ctx.get(RequestIdHandler.REQUEST_ID_KEY);
     Integer id = RestUtils.parseAndRespond(ctx, "id", Integer::parseInt, "Metric Group ID cannot be null");
-    
+
     JsonObject body = ctx.body().asJsonObject();
     String status = body.getString("status");
-    
+
     if (status == null || status.isEmpty()) {
       ErrorHandler.respondError(ctx, new IllegalArgumentException("Status cannot be null or empty"));
       return;
     }
-    
+
     JsonObject request = new JsonObject()
       .put("id", id)
       .put("status", status);

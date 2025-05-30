@@ -57,6 +57,8 @@ CREATE TABLE motadata.provisioned_devices (
 CREATE TABLE motadata.metric (
     id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
+    metric_type TEXT NOT NULL, -- COUNTER, GAUGE, etc.
+    metric_unit TEXT NOT NULL, -- bytes, seconds, etc.
     device_type_id INT NOT NULL REFERENCES device_catalog(id),
     protocol TEXT NOT NULL,
     plugin_id TEXT NOT NULL,
@@ -65,7 +67,6 @@ CREATE TABLE motadata.metric (
 CREATE TABLE motadata.metric_group (
     id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
-    metrics TEXT[] NOT NULL,
     device_type_id INT NOT NULL REFERENCES device_catalog(id),
     polling_interval_seconds INT DEFAULT 10,
     last_polled_at TIMESTAMP,
@@ -73,15 +74,21 @@ CREATE TABLE motadata.metric_group (
     created_at TIMESTAMP DEFAULT now()
 );
 
+CREATE TABLE motadata.metric_group_metrics (
+    metric_group_id INT NOT NULL REFERENCES motadata.metric_group(id),
+    metric_id INT NOT NULL REFERENCES motadata.metric(id),
+    PRIMARY KEY (metric_group_id, metric_id)
+);
+
 CREATE TABLE motadata.metrics_record (
     id SERIAL PRIMARY KEY,
     device_id INT REFERENCES provisioned_devices(id),
     metric_id INT REFERENCES metric_configs(id),
-
-    metric_name VARCHAR(100),
-    metric_value DOUBLE PRECISION,
-
     collected_at TIMESTAMP DEFAULT now(),
+
+    metric_value TEXT,
+    unit VARCHAR(64),
+    metadata JSONB DEFAULT '{}'::jsonb,
 );
 
 CREATE INDEX metric_by_device on motadata.metrics (device_id, metric_id);

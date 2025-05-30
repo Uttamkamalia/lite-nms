@@ -10,9 +10,7 @@ import com.motadata.nms.discovery.DiscoveryVerticle;
 import com.motadata.nms.discovery.context.DiscoveryContextBuilderVerticle;
 import com.motadata.nms.discovery.job.SnmpDiscoveryJob;
 import com.motadata.nms.discovery.job.SshDiscoveryJob;
-import com.motadata.nms.models.DeviceType;
-import com.motadata.nms.models.DiscoveryProfile;
-import com.motadata.nms.models.ProvisionedDevice;
+import com.motadata.nms.models.*;
 import com.motadata.nms.models.credential.Credential;
 import com.motadata.nms.models.credential.CredentialProfile;
 import com.motadata.nms.models.credential.SnmpCredential;
@@ -71,6 +69,8 @@ public class MainVerticle extends AbstractVerticle {
     vertx.eventBus().registerDefaultCodec(SshDiscoveryJob.class, new GenericJacksonCodec<>(SshDiscoveryJob.class));
     vertx.eventBus().registerDefaultCodec(SnmpDiscoveryJob.class, new GenericJacksonCodec<>(SnmpDiscoveryJob.class));
     vertx.eventBus().registerDefaultCodec(ProvisionedDevice.class, new GenericJacksonCodec<>(ProvisionedDevice.class));
+    vertx.eventBus().registerDefaultCodec(Metric.class, new GenericJacksonCodec<>(Metric.class));
+    vertx.eventBus().registerDefaultCodec(MetricGroup.class, new GenericJacksonCodec<>(MetricGroup.class));
     logger.info("Event bus codecs registered.");
     return Future.succeededFuture();
   }
