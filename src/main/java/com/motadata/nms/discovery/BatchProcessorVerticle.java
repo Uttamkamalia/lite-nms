@@ -25,7 +25,7 @@ public class BatchProcessorVerticle extends AbstractVerticle {
   @Override
   public void start(Promise<Void> startPromise) {
     String pluginIODir = config().getJsonObject(ConfigKeys.DISCOVERY).getString(DISCOVERY_PLUGIN_IO_DIR);
-    String pluginExecutableDir = config().getJsonObject(ConfigKeys.DISCOVERY).getString(DISCOVERY_PLUGIN_EXECUTABLE_DIR);
+    String pluginExecutable = config().getJsonObject(ConfigKeys.DISCOVERY).getString(DISCOVERY_PLUGIN_EXECUTABLE);
 
     vertx.eventBus().consumer(DISCOVERY_BATCH.name(), message -> {
       DiscoveryJob batchJob = (DiscoveryJob) message.body();
@@ -45,7 +45,7 @@ public class BatchProcessorVerticle extends AbstractVerticle {
 //        Files.createFile(Paths.get(resultFile));
 
         // Start the Go plugin process
-        process = new ProcessBuilder(pluginExecutableDir, inputFile,resultFile).start();
+        process = new ProcessBuilder(pluginExecutable, inputFile,resultFile, "POLLING").start();
         long discoveryBatchTimeout = config()
           .getJsonObject(ConfigKeys.DISCOVERY)
           .getInteger(DISCOVERY_BATCH_TIMEOUT_MS, 30000);

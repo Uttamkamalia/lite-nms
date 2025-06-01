@@ -263,6 +263,7 @@ public class DatabaseVerticle extends AbstractVerticle {
           .onFailure(err -> ErrorHandler.replyFailure(msg, logger, err));
       });
 
+
     vertx.eventBus().<Integer>consumer(METRIC_GROUP_GET_WITH_DETAILS.name())
       .handler(msg -> {
         metricGroupDAO.getMetricGroupWithDetails(msg.body())
@@ -300,6 +301,18 @@ public class DatabaseVerticle extends AbstractVerticle {
     vertx.eventBus().consumer(PROVISIONED_DEVICE_GET_ALL.name())
       .handler(msg -> {
         provisionedDeviceDAO.getAll()
+          .onSuccess(devices -> {
+            JsonArray result = new JsonArray();
+            devices.forEach(device -> result.add(device.toJson()));
+            msg.reply(result);
+          })
+          .onFailure(err -> ErrorHandler.replyFailure(msg, logger, err));
+      });
+
+    vertx.eventBus().consumer(PROVISIONED_DEVICE_GET_ALL_BY_DEVICE_TYPE.name())
+      .handler(msg -> {
+        Integer deviceTypeId = (Integer) msg.body();
+        provisionedDeviceDAO.findByDeviceTypeId(deviceTypeId)
           .onSuccess(devices -> {
             JsonArray result = new JsonArray();
             devices.forEach(device -> result.add(device.toJson()));

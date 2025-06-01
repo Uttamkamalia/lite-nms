@@ -137,7 +137,7 @@ public class SnmpDiscoveryJob extends DiscoveryJob {
     if (version != null) {
       credentialJson.put("version", version);
     }
-    json.put("creds", credentialJson);
+    json.put("credential", credentialJson);
 
     return json;
   }
@@ -147,7 +147,7 @@ public class SnmpDiscoveryJob extends DiscoveryJob {
     StringBuilder sb = new StringBuilder();
     JsonObject deviceJson = this.toDeviceJson();
 
-    sb.append("{\"discoveryProfileId:\""+discoveryProfileId+",");
+    sb.append("{\"discovery_profile_id:\""+discoveryProfileId+",");
 
     sb.append("{\"devices:[\"");
 

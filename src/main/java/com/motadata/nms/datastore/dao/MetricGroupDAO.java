@@ -443,5 +443,133 @@ public class MetricGroupDAO {
                 return Future.failedFuture(NMSException.internal(msg, err));
             });
     }
+
+    public Future<JsonObject> getMetricGroupWithDevices(int metricGroupId) {
+        String query = "SELECT " +
+            "mg.id AS metric_group_id, " +
+            "mg.name AS metric_group_name, " +
+            "mg.polling_interval_seconds, " +
+            "mg.last_polled_at, " +
+            "mg.status, " +
+            "dc.id AS device_catalog_id, " +
+            "dc.type AS device_type, " +
+            "dc.default_protocol, " +
+            "dc.default_port, " +
+            "dc.metadata AS device_metadata, " +
+            "m.id AS metric_id, " +
+            "m.name AS metric_name, " +
+            "m.metric_type, " +
+            "m.metric_unit, " +
+            "m.protocol AS metric_protocol, " +
+            "m.plugin_id, " +
+            "pd.id AS device_id, " +
+            "pd.ip AS device_ip, " +
+            "pd.port AS device_port, " +
+            "pd.protocol AS device_protocol, " +
+            "pd.status AS device_status, " +
+            "pd.metadata AS device_metadata, " +
+            "cp.id AS credential_profile_id, " +
+            "cp.name AS credential_profile_name, " +
+            "cp.credentials AS credential_profile_credentials " +
+            "FROM motadata.metric_group mg " +
+            "JOIN motadata.device_catalog dc ON mg.device_type_id = dc.id " +
+            "JOIN motadata.metric_group_metrics mgm ON mg.id = mgm.metric_group_id " +
+            "JOIN motadata.metric m ON mgm.metric_id = m.id " +
+            "LEFT JOIN motadata.provisioned_devices pd ON pd.device_type_id = dc.id " +
+            "LEFT JOIN motadata.credential_profile cp ON pd.credentials_profile_id = cp.id " +
+            "WHERE mg.id = $1 AND pd.status = 'PROVISIONED'" ;
+
+        return pool.preparedQuery(query)
+            .execute(Tuple.of(metricGroupId))
+            .map(rows -> {
+                if (rows.size() == 0) {
+                    throw NMSException.notFound("Metric group not found with id: " + metricGroupId);
+                }
+
+                JsonObject result = new JsonObject();
+                JsonObject metricGroup = new JsonObject();
+                JsonArray metrics = new JsonArray();
+                JsonArray devices = new JsonArray();
+
+                // Track devices we've already processed to avoid duplicates
+                // since the same device will appear multiple times (once per metric)
+                java.util.Set<Integer> processedDeviceIds = new java.util.HashSet<>();
+
+                // Track metrics we've already processed to avoid duplicates
+                java.util.Set<Integer> processedMetricIds = new java.util.HashSet<>();
+
+                for (Row row : rows) {
+                    // Process metric group info (only once)
+                    if (metricGroup.isEmpty()) {
+                        metricGroup.put("id", row.getInteger("metric_group_id"))
+                            .put("name", row.getString("metric_group_name"))
+                            .put("polling_interval_seconds", row.getInteger("polling_interval_seconds"))
+                            .put("last_polled_at", row.getValue("last_polled_at"))
+                            .put("status", row.getString("status"));
+
+                        JsonObject deviceCatalog = new JsonObject()
+                            .put("id", row.getInteger("device_catalog_id"))
+                            .put("type", row.getString("device_type"))
+                            .put("default_protocol", row.getString("default_protocol"))
+                            .put("default_port", row.getInteger("default_port"))
+                            .put("metadata", row.getJsonObject("device_metadata"));
+
+                        metricGroup.put("device_catalog", deviceCatalog);
+                    }
+
+                    // Process metric (if not already processed)
+                    Integer metricId = row.getInteger("metric_id");
+                    if (!processedMetricIds.contains(metricId)) {
+                        JsonObject metric = new JsonObject()
+                            .put("id", metricId)
+                            .put("name", row.getString("metric_name"))
+                            .put("metric_type", row.getString("metric_type"))
+                            .put("metric_unit", row.getString("metric_unit"))
+                            .put("protocol", row.getString("metric_protocol"))
+                            .put("plugin_id", row.getString("plugin_id"));
+
+                        metrics.add(metric);
+                        processedMetricIds.add(metricId);
+                    }
+
+                    // Process device (if not already processed and if device exists)
+                    Integer deviceId = row.getInteger("device_id");
+                    if (deviceId != null && !processedDeviceIds.contains(deviceId)) {
+                        JsonObject device = new JsonObject()
+                            .put("id", deviceId)
+                            .put("ip", row.getString("device_ip"))
+                            .put("port", row.getInteger("device_port"))
+                            .put("protocol", row.getString("device_protocol"))
+                            .put("status", row.getString("device_status"))
+                            .put("metadata", row.getJsonObject("device_metadata"));
+
+                        // Add credential profile info
+                        if (row.getInteger("credential_profile_id") != null) {
+                            JsonObject credentialProfile = new JsonObject()
+                                .put("id", row.getInteger("credential_profile_id"))
+                                .put("name", row.getString("credential_profile_name"))
+                                .put("credentials", row.getJsonObject("credential_profile_credentials"));
+
+                            device.put("credential_profile", credentialProfile);
+                        }
+
+                        devices.add(device);
+                        processedDeviceIds.add(deviceId);
+                    }
+                }
+
+                metricGroup.put("metrics", metrics);
+                result.put("metricGroup", metricGroup);
+                result.put("devices", devices);
+                result.put("deviceCount", devices.size());
+
+                return result;
+            })
+            .recover(err -> {
+                String msg = "Failed to fetch metric group with devices for id " + metricGroupId;
+                log.error(msg, err);
+                return Future.failedFuture(NMSException.internal(msg, err));
+            });
+    }
 }
 

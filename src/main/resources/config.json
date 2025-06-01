@@ -7,14 +7,16 @@
     "password": "mypassword"
   },
   "polling": {
-    "interval_ms": 60000
+    "interval_ms": 60000,
+    "plugin_executable": "/home/uttam-kamalia/Documents/goprac/go-plugin/ssh-plugin/ssh_plugin",
+    "job_timeout_ms": 30000
   },
   "discovery": {
     "batch_timeout_ms": 10000,
     "batch_size": 1,
     "discovery_request_timeout": 20,
     "discovery_plugin_io_dir" : "/home/uttam-kamalia/Documents/goprac/go-plugin/ssh-plugin/resulttestfiles/",
-    "discovery_plugin_executable_dir" : "/home/uttam-kamalia/Documents/goprac/go-plugin/ssh-plugin/ssh_plugin"
+    "plugin_executable" : "/home/uttam-kamalia/Documents/goprac/go-plugin/ssh-plugin/ssh_plugin"
   },
   "http": {
     "port": 10200

@@ -167,7 +167,7 @@ public class SshDiscoveryJob extends DiscoveryJob {
     if (password != null) {
       credentialJson.put("password", password);
     }
-    json.put("creds", credentialJson);
+    json.put("credential", credentialJson);
 
     return json;
   }
@@ -178,7 +178,7 @@ public class SshDiscoveryJob extends DiscoveryJob {
     StringBuilder sb = new StringBuilder();
     JsonObject deviceJson = this.toDeviceJson();
 
-    sb.append("{\"DiscoveryProfileId\":"+discoveryProfileId+",");
+    sb.append("{\"discovery_profile_id\":"+discoveryProfileId+",");
 
     sb.append("\"devices\":[");
 

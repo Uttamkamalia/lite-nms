@@ -224,6 +224,55 @@ public class ProvisionedDeviceDAO {
       });
   }
 
+  // Find devices by device type ID with credential profile information
+  public Future<List<ProvisionedDevice>> findByDeviceTypeId(Integer deviceTypeId) {
+    String query = "SELECT pd.*, cp.name as credential_profile_name, cp.credentials as credential_profile_credentials " +
+                   "FROM motadata.provisioned_devices pd " +
+                   "LEFT JOIN motadata.credential_profile cp ON pd.credentials_profile_id = cp.id " +
+                   "WHERE pd.device_type_id = $1";
+
+    return pool.preparedQuery(query)
+        .execute(Tuple.of(deviceTypeId))
+        .map(rows -> {
+            List<ProvisionedDevice> devices = new ArrayList<>();
+            for (Row row : rows) {
+                ProvisionedDevice device = mapRowToProvisionedDevice(row);
+
+                // Add credential profile information to the device metadata
+                JsonObject metadata = device.getMetadata();
+                if (metadata == null) {
+                    metadata = new JsonObject();
+                }
+
+                // Add credential profile information
+                JsonObject credentialProfile = new JsonObject();
+                credentialProfile.put("name", row.getString("credential_profile_name"));
+
+                // Get credentials from the row
+                String credentialsStr = row.getString("credential_profile_credentials");
+                if (credentialsStr != null && !credentialsStr.isEmpty()) {
+                    try {
+                        JsonObject credentials = new JsonObject(credentialsStr);
+                        credentialProfile.put("credentials", credentials);
+                    } catch (Exception e) {
+                        log.warn("Failed to parse credential profile credentials for device: " + device.getId(), e);
+                    }
+                }
+
+                metadata.put("credential_profile", credentialProfile);
+                device.setMetadata(metadata);
+
+                devices.add(device);
+            }
+            return devices;
+        })
+        .recover(err -> {
+            String errMsg = "Database Error: Failed to find devices by device type ID: " + deviceTypeId;
+            log.error(errMsg, err);
+            return Future.failedFuture(NMSException.internal(errMsg, err));
+        });
+  }
+
   // Helper method to map a database row to a ProvisionedDevice object
   private ProvisionedDevice mapRowToProvisionedDevice(Row row) {
     ProvisionedDevice device = new ProvisionedDevice();
