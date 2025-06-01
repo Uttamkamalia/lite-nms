@@ -15,6 +15,9 @@ import com.motadata.nms.models.credential.Credential;
 import com.motadata.nms.models.credential.CredentialProfile;
 import com.motadata.nms.models.credential.SnmpCredential;
 import com.motadata.nms.models.credential.SshCredential;
+import com.motadata.nms.polling.PollingJobExecutorVerticle;
+import com.motadata.nms.polling.PollingOrchestratorVerticle;
+import com.motadata.nms.polling.PollingSchedulerVerticle;
 import com.motadata.nms.rest.ApiVerticle;
 import com.motadata.nms.rest.handlers.DeviceTypeApiHandler;
 import io.vertx.config.ConfigRetriever;
@@ -105,6 +108,9 @@ public class MainVerticle extends AbstractVerticle {
       .compose(depId -> vertx.deployVerticle(DiscoveryVerticle.class.getName(), standardOptions))
       .compose(depId -> vertx.deployVerticle( DiscoveryContextBuilderVerticle.class.getName(), discWorkerOptions))
       .compose(depId -> vertx.deployVerticle( BatchProcessorVerticle.class.getName(), bWorkerOptions))
+      .compose(depId -> vertx.deployVerticle( PollingOrchestratorVerticle.class.getName(), standardOptions))
+      .compose(depId -> vertx.deployVerticle( PollingSchedulerVerticle.class.getName(), standardOptions))
+      .compose(depId -> vertx.deployVerticle( PollingJobExecutorVerticle.class.getName(), discWorkerOptions))
       .compose(depId -> vertx.deployVerticle( ApiVerticle.class.getName(), standardOptions))
       .compose(depId -> {
         logger.info("All verticles deployed successfully.");

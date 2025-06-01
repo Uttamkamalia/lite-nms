@@ -45,7 +45,7 @@ public class BatchProcessorVerticle extends AbstractVerticle {
 //        Files.createFile(Paths.get(resultFile));
 
         // Start the Go plugin process
-        process = new ProcessBuilder(pluginExecutable, inputFile,resultFile, "POLLING").start();
+        process = new ProcessBuilder(pluginExecutable, "DISCOVERY", inputFile,resultFile).start();
         long discoveryBatchTimeout = config()
           .getJsonObject(ConfigKeys.DISCOVERY)
           .getInteger(DISCOVERY_BATCH_TIMEOUT_MS, 30000);
@@ -203,3 +203,5 @@ public class BatchProcessorVerticle extends AbstractVerticle {
     });
   }
 }
+
+//{"discovery_profile_id": 1,"discovery_batch_job_id": "0a23ae49-bf55-4d0a-aae6-4fa6ccb52595","metric_ids":["cpu_usage", "memory_usage"],"devices": [{"protocol": "SSH","ip": "127.10.0.5","port": 2222,"credential": {"username": "username","password": "password"}}]}

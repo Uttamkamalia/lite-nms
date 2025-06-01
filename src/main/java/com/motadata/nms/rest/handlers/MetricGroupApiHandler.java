@@ -30,7 +30,7 @@ public class MetricGroupApiHandler {
     router.put("/metric-group/:id").handler(this::updateMetricGroup);
     router.put("/metric-group/:id/status").handler(this::updateMetricGroupStatus);
     router.delete("/metric-group/:id").handler(this::deleteMetricGroup);
-    router.delete("/metric-group/poll/trigger/:id").handler(this::triggerMetricGroupPolling);
+    router.get("/metric-group/poll/trigger/:id").handler(this::triggerMetricGroupPolling);
   }
 
   private void triggerMetricGroupPolling(RoutingContext routingContext) {

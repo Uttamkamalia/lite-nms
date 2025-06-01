@@ -514,7 +514,7 @@ public class MetricGroupDAO {
                             .put("default_port", row.getInteger("default_port"))
                             .put("metadata", row.getJsonObject("device_metadata"));
 
-                        metricGroup.put("device_catalog", deviceCatalog);
+                        metricGroup.put("device_type", deviceCatalog);
                     }
 
                     // Process metric (if not already processed)
@@ -548,7 +548,7 @@ public class MetricGroupDAO {
                             JsonObject credentialProfile = new JsonObject()
                                 .put("id", row.getInteger("credential_profile_id"))
                                 .put("name", row.getString("credential_profile_name"))
-                                .put("credentials", row.getJsonObject("credential_profile_credentials"));
+                                .put("credential", row.getJsonObject("credential_profile_credentials"));
 
                             device.put("credential_profile", credentialProfile);
                         }

@@ -29,10 +29,10 @@ public class PollingSchedulerVerticle extends AbstractVerticle {
         // Register consumer for scheduling polling jobs
         vertx.eventBus().consumer(METRIC_GROUP_POLLING_SCHEDULE.name(), message -> {
             JsonObject request = (JsonObject) message.body();
-            Integer metricGroupId = request.getInteger("metricGroupId");
-            Integer jobId = request.getInteger("jobId");
-            Integer deviceTypeId = request.getInteger("deviceTypeId");
-            Integer pollingInterval = request.getInteger("pollingInterval", 60); // TODO refactor to fetch default from config()
+            Integer metricGroupId = request.getInteger("metric_group_id");
+            String jobId = request.getString("job_id");
+            Integer deviceTypeId = request.getInteger("device_type_id");
+            Integer pollingInterval = request.getInteger("polling_interval_seconds", 60); // TODO refactor to fetch default from config()
 
             if (metricGroupId == null || jobId == null || deviceTypeId == null) {
                 message.fail(400, "Missing required parameters: metricGroupId, jobId, or deviceTypeId");
@@ -66,7 +66,7 @@ public class PollingSchedulerVerticle extends AbstractVerticle {
     }
 
     // TODO need to refactor this to schedule just one periodic job for each metric group
-    private long schedulePollingTask(Integer metricGroupId, Integer deviceTypeId, Integer jobId, Integer pollingInterval) {
+    private long schedulePollingTask(Integer metricGroupId, Integer deviceTypeId, String jobId, Integer pollingInterval) {
         // Convert polling interval from seconds to milliseconds
         long intervalMs = pollingInterval * 1000L;
 
@@ -80,12 +80,11 @@ public class PollingSchedulerVerticle extends AbstractVerticle {
                 return;
             }
 
-            logger.info("Executing polling for metric group " + metricGroupId +
-                       " with " + pollingJobsMap.size() + " jobs");
+//            logger.info("Executing polling for metric group " + metricGroupId +
+//                       " with " + pollingJobsMap.size() + " jobs");
 
-            JsonObject job = JsonObject.mapFrom(pollingJobsMap.get(jobId));
             pollingJobsMap.forEach((key, value) -> {
-              logger.info("Sending Polling-job: " + key + " - " + value + "for execution");
+//              logger.info("Sending Polling-job: " + key + " - " + value + "for execution");
               vertx.eventBus().send(METRIC_POLLER_EXECUTE.name(), value);
             });
         });

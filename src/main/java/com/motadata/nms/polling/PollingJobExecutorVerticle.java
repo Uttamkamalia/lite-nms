@@ -32,10 +32,10 @@ public class PollingJobExecutorVerticle extends AbstractVerticle {
             Process process = null;
             try {
                 // Encode the job as Base64 to avoid command-line escaping issues
-                String encodedJob = Base64.getEncoder().encodeToString(pollingJob.encode().getBytes());
+                String encodedJob = pollingJob.encode();
                 ProcessBuilder processBuilder = new ProcessBuilder(
                     pluginExecutable,
-                    "" + encodedJob
+                    "POLLING" ,  encodedJob
                 );
 
                 // Redirect error stream to output stream
@@ -76,8 +76,8 @@ public class PollingJobExecutorVerticle extends AbstractVerticle {
                             result.put("status", "success");
                             result.put("jobId", jobId);
 
-                            logger.info("Polling job completed successfully: {}", jobId);
-                            processPollingResults(pollingJob, result);
+                            logger.info("Polling job completed successfully: {} {} ",jobId, output);
+//                            processPollingResults(pollingJob, result);
                             message.reply(result);
                         } catch (Exception e) {
                             logger.error("Failed to parse plugin output as JSON: {}", e.getMessage());
@@ -88,8 +88,8 @@ public class PollingJobExecutorVerticle extends AbstractVerticle {
                                 .put("error", "Failed to parse plugin output: " + e.getMessage())
                                 .put("output", output.toString());
 
-                            handlePollingError(pollingJob, result);
-                            message.reply(result);
+//                            handlePollingError(pollingJob, result);
+//                            message.reply(result);
                         }
                     } else {
                         logger.error("Polling plugin failed with exit code {}: {}", exitCode, output.toString());
@@ -101,8 +101,8 @@ public class PollingJobExecutorVerticle extends AbstractVerticle {
                             .put("error", "Plugin failed with exit code " + exitCode)
                             .put("output", output.toString());
 
-                        handlePollingError(pollingJob, result);
-                        message.reply(result);
+//                        handlePollingError(pollingJob, result);
+//                        message.reply(result);
                     }
                 }
             } catch (Exception e) {
@@ -113,8 +113,8 @@ public class PollingJobExecutorVerticle extends AbstractVerticle {
                     .put("jobId", jobId)
                     .put("error", "Failed to execute plugin: " + e.getMessage());
 
-                handlePollingError(pollingJob, result);
-                message.reply(result);
+//                handlePollingError(pollingJob, result);
+//                message.reply(result);
             }
         });
 

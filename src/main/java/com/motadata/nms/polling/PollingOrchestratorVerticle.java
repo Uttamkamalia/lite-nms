@@ -99,7 +99,7 @@ public class PollingOrchestratorVerticle extends AbstractVerticle {
     JsonArray devices = pollingContext.getJsonArray("devices");
     JsonObject metricGroup = pollingContext.getJsonObject("metricGroup");
     Integer metricGroupId = metricGroup.getInteger("id");
-    Integer deviceTypeId = metricGroup.getInteger("deviceTypeId");
+    Integer deviceTypeId = metricGroup.getJsonObject("device_type").getInteger("id");
 
     if (devices == null || devices.isEmpty()) {
       logger.warn("No devices found for polling metric group: " + metricGroupId);
@@ -148,20 +148,20 @@ public class PollingOrchestratorVerticle extends AbstractVerticle {
         deviceBatch = new ArrayList<>();
       }
 
-      logger.info("Total devices for polling: " + totalDevices);
+//      logger.info("Total devices for polling: " + totalDevices);
     }
   }
 
   private void sendPollingBatchForScheduling(String jobId, Integer metricGroupId, int deviceTypeId, int pollingIntervalSeconds) {
-    logger.info("Sending polling job " + jobId + " with " + deviceTypeId +
-      " devices for metric group " + metricGroupId);
+//    logger.info("Sending polling job " + jobId + " with " + deviceTypeId +
+//      " devices for metric group " + metricGroupId);
 
     // Create batch job message
     JsonObject batchJob = new JsonObject()
-      .put("jobId", jobId)
-      .put("metricGroupId", metricGroupId)
-      .put("deviceTypeId", deviceTypeId)
-      .put("pollingInterval", pollingIntervalSeconds);
+      .put("job_id", jobId)
+      .put("metric_group_id", metricGroupId)
+      .put("device_type_id", deviceTypeId)
+      .put("polling_interval_seconds", pollingIntervalSeconds);
 
     // Send the job ID to the batch processor
     vertx.eventBus().send(METRIC_GROUP_POLLING_SCHEDULE.name(), batchJob);
@@ -175,7 +175,7 @@ public class PollingOrchestratorVerticle extends AbstractVerticle {
   private JsonObject parseJobBasedOnProtocol(JsonObject device) {
     if (device == null) {
         logger.error("Device object is null");
-        return new JsonObject();
+        return null;
     }
 
     String protocol = device.getString("protocol");
@@ -199,7 +199,7 @@ public class PollingOrchestratorVerticle extends AbstractVerticle {
     }
 
     // Get credentials from the credential profile
-    JsonObject credentials = credentialProfile.getJsonObject("credentials_profile_credentials");
+    JsonObject credentials = credentialProfile.getJsonObject("credential");
     if (credentials == null) {
         logger.warn("No credentials found in credential profile for device: " + device.getInteger("id"));
         return null;
@@ -209,7 +209,7 @@ public class PollingOrchestratorVerticle extends AbstractVerticle {
     Credential credential = Credential.fromJson(credentials); //TODO error handling here
 
     // Add credentials to the parsed device
-    parsedDevice.put("credential", credential.toJson().remove("type").toString());
+    parsedDevice.put("credential", credential.toJson());
 
     logger.debug("Parsed device with protocol " + protocol + ": " + parsedDevice.encode());
     return parsedDevice;
