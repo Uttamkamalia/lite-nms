@@ -14,8 +14,8 @@ public class SnmpDiscoveryJob extends DiscoveryJob {
   private String version;
   private String community;
 
-  public SnmpDiscoveryJob(List<String> batch, Integer port, CredentialProfile credentialProfile, Integer discoveryProfileId) {
-    super(batch, port, credentialProfile.getId(), discoveryProfileId);
+  public SnmpDiscoveryJob(List<String> batch, Integer port, Integer deviceTypeId, CredentialProfile credentialProfile, Integer discoveryProfileId) {
+    super(batch, port,deviceTypeId, discoveryProfileId, credentialProfile.getId());
     extractConnectionDetails(credentialProfile);
   }
 
@@ -29,8 +29,8 @@ public class SnmpDiscoveryJob extends DiscoveryJob {
     }
   }
 
-  public SnmpDiscoveryJob(List<String> batch, Integer port, Integer credentialProfileId, Integer discoveryProfileId, String version, String community) {
-    super(batch, port, credentialProfileId, discoveryProfileId);
+  public SnmpDiscoveryJob(List<String> batch, Integer port, Integer deviceTypeId,  Integer credentialProfileId, Integer discoveryProfileId, String version, String community) {
+    super(batch, port, deviceTypeId, credentialProfileId, discoveryProfileId);
     this.version = version;
     this.community = community;
   }
@@ -52,6 +52,11 @@ public class SnmpDiscoveryJob extends DiscoveryJob {
       throw new IllegalArgumentException("Port is required for SSH discovery job");
     }
 
+    Integer deviceTypeId = json.getInteger("deviceTypeId");
+    if (deviceTypeId == null) {
+      throw new IllegalArgumentException("Port is required for SSH discovery job");
+    }
+
     Integer discoveryProfileId = json.getInteger("discoveryProfileId");
     if (discoveryProfileId == null) {
       throw new IllegalArgumentException("Discovery profile ID is required for SSH discovery job");
@@ -66,7 +71,7 @@ public class SnmpDiscoveryJob extends DiscoveryJob {
     String community = json.getString("community");
 
     // Create the job
-    SnmpDiscoveryJob job = new SnmpDiscoveryJob(batch, port, credentialProfileId, discoveryProfileId, version, community);
+    SnmpDiscoveryJob job = new SnmpDiscoveryJob(batch, port, deviceTypeId, credentialProfileId, discoveryProfileId, version, community);
 
     // Set command if available
     String command = json.getString("command");
@@ -148,6 +153,8 @@ public class SnmpDiscoveryJob extends DiscoveryJob {
     JsonObject deviceJson = this.toDeviceJson();
 
     sb.append("{\"discovery_profile_id:\""+discoveryProfileId+",");
+    sb.append("\"metric_ids\":[\"uname\"],");
+
 
     sb.append("{\"devices:[\"");
 

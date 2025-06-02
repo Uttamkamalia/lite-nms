@@ -14,54 +14,43 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.shareddata.LocalMap;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import static com.motadata.nms.datastore.utils.ConfigKeys.*;
 import static com.motadata.nms.utils.EventBusChannels.*;
 
 public class PollingOrchestratorVerticle extends AbstractVerticle {
   private static final Logger logger = LoggerFactory.getLogger(PollingOrchestratorVerticle.class);
-  private static final int BATCH_SIZE = 10; // Number of devices per batch
+
+  private static  int pollingBatchSize = 10; // Number of devices per batch
+  private static final int pollingDefaultTimeout = 10;
+
   private static final String POLLING_JOBS_MAP = "polling-jobs";
+  private static final String SCHEDULED_TIMERS_MAP = "scheduled-polling-timers";
 
   @Override
   public void start(Promise<Void> startPromise) {
-    // Register event bus consumer for polling trigger
+    pollingBatchSize = config().getJsonObject(POLLING).getInteger(POLLING_BATCH_SIZE);
+
     vertx.eventBus().consumer(METRIC_GROUP_POLLING_TRIGGER.name(), this::handlePollingTrigger);
 
-    logger.info("PollingVerticle started and listening for metric group polling trigger events.");
+    logger.info("PollingOrchestratorVerticle started and listening for metric group polling trigger events.");
+
     startPromise.complete();
   }
 
   private void handlePollingTrigger(Message<Object> message) {
-    Integer metricGroupId;
-
-    try {
-      if (message.body() instanceof Integer) {
-        metricGroupId = (Integer) message.body();
-      } else if (message.body() instanceof String) {
-        metricGroupId = Integer.parseInt((String) message.body());
-      } else {
-        throw new IllegalArgumentException("Invalid metric group ID format");
-      }
-    } catch (Exception e) {
-      logger.error("Failed to parse metric group ID", e);
-      message.fail(400, "Invalid metric group ID: " + e.getMessage());
-      return;
-    }
+    Integer metricGroupId = (Integer) message.body();
 
     logger.info("Received polling trigger for metric group: " + metricGroupId);
 
-    // Build polling context
     buildPollingContext(metricGroupId)
       .onSuccess(pollingContext -> {
 
-        // Process the polling context
         processPollingContext(pollingContext);
 
-        // Reply to the message
         message.reply(new JsonObject()
           .put("status", "success")
           .put("message", "Polling triggered for metric group " + metricGroupId)
@@ -77,16 +66,13 @@ public class PollingOrchestratorVerticle extends AbstractVerticle {
     String requestId = UUID.randomUUID().toString();
     DeliveryOptions options = new DeliveryOptions().addHeader("requestId", requestId);
 
-    // Get metric group details and devices in a single call
+    // TODO : check if this long list of devices can be streamed in batches than in bulk
     return vertx.eventBus().<JsonObject>request(METRIC_GROUP_GET_WITH_DEVICES.name(), metricGroupId, options)
       .map(Message::body)
       .compose(result -> {
         if (result == null) {
           return Future.failedFuture(NMSException.notFound("Metric group not found: " + metricGroupId));
         }
-
-        // Add timestamp to the polling context
-        result.put("timestamp", Instant.now().toString());
 
         logger.info("Built polling context for metric group " + metricGroupId +
                    " with " + result.getInteger("deviceCount", 0) + " devices");
@@ -108,15 +94,16 @@ public class PollingOrchestratorVerticle extends AbstractVerticle {
 
     LocalMap<String, JsonObject> pollingJobsMap = getPollingJobsMap(metricGroupId, deviceTypeId);
 
-    // Extract plugin IDs from metrics
     JsonArray metrics = metricGroup.getJsonArray("metrics", new JsonArray());
-    List<String> pluginIds = metrics.stream().map(metric ->(JsonObject)metric).map(metric -> metric.getString("plugin_id")).toList();
+    List<String> pluginIds = metrics
+      .stream()
+      .map(metric ->(JsonObject)metric)
+      .map(metric -> metric.getString("plugin_id"))
+      .toList();
 
-    // Get polling interval
     Integer pollingInterval = metricGroup.getInteger("polling_interval_seconds", 60); // Add config default
     Integer totalDevices = 0;
 
-    // Batch devices for polling
     List<JsonObject> deviceBatch = new ArrayList<>();
     for (int i = 0; i < devices.size(); i++) {
       JsonObject parsedDevice = parseJobBasedOnProtocol(devices.getJsonObject(i));
@@ -124,12 +111,8 @@ public class PollingOrchestratorVerticle extends AbstractVerticle {
         deviceBatch.add(parsedDevice);
       }
 
-      // When we reach batch size or the end of the list, create and send a batch job
-      if (deviceBatch.size() >= BATCH_SIZE || i == devices.size() - 1) {
-        // Create a polling job for this batch
+      if (deviceBatch.size() >= pollingBatchSize || i == devices.size() - 1) {
         String jobId = UUID.randomUUID().toString();
-
-        // Create job JSON
         JsonObject batchPollingJob = new JsonObject()
           .put("id", jobId)
           .put("metric_group_id", metricGroupId)
@@ -137,38 +120,38 @@ public class PollingOrchestratorVerticle extends AbstractVerticle {
           .put("metric_ids", new JsonArray(pluginIds))
           .put("devices", new JsonArray(deviceBatch));
 
-        // Store the job in shared data
         pollingJobsMap.put(jobId, batchPollingJob);
 
-        // Send the job to the batch processor
         sendPollingBatchForScheduling(jobId, metricGroupId, deviceTypeId, pollingInterval);
 
-        // Reset for next batch
         totalDevices += deviceBatch.size();
         deviceBatch = new ArrayList<>();
       }
 
-//      logger.info("Total devices for polling: " + totalDevices);
+      logger.debug("Total devices for polling: " + totalDevices);
     }
   }
 
   private void sendPollingBatchForScheduling(String jobId, Integer metricGroupId, int deviceTypeId, int pollingIntervalSeconds) {
-//    logger.info("Sending polling job " + jobId + " with " + deviceTypeId +
-//      " devices for metric group " + metricGroupId);
+    logger.debug("Sending polling job " + jobId + " with " + deviceTypeId +
+      " devices for metric group " + metricGroupId);
 
-    // Create batch job message
     JsonObject batchJob = new JsonObject()
       .put("job_id", jobId)
       .put("metric_group_id", metricGroupId)
       .put("device_type_id", deviceTypeId)
       .put("polling_interval_seconds", pollingIntervalSeconds);
 
-    // Send the job ID to the batch processor
     vertx.eventBus().send(METRIC_GROUP_POLLING_SCHEDULE.name(), batchJob);
   }
 
   public static LocalMap<String, JsonObject> getPollingJobsMap(Integer metricGroupId, int deviceTypeId) {
     String mapName = POLLING_JOBS_MAP + "-" + metricGroupId + "-" + deviceTypeId;
+    return VertxProvider.getVertx().sharedData().getLocalMap(mapName);
+  }
+
+  public static LocalMap<String, Long> getMetricGroupPollingScheduledJobTimersMap(Integer metricGroupId, int deviceTypeId) {
+    String mapName = SCHEDULED_TIMERS_MAP + "-" + metricGroupId + "-" + deviceTypeId;
     return VertxProvider.getVertx().sharedData().getLocalMap(mapName);
   }
 
@@ -184,31 +167,25 @@ public class PollingOrchestratorVerticle extends AbstractVerticle {
         return null;
     }
 
-    // Create a new device object with the same basic properties
     JsonObject parsedDevice = new JsonObject()
         .put("id", device.getInteger("id"))
         .put("ip", device.getString("ip"))
         .put("port", device.getInteger("port"))
         .put("protocol", protocol);
 
-    // Get credential profile from the device
     JsonObject credentialProfile = device.getJsonObject("credential_profile");
     if (credentialProfile == null) {
         logger.warn("No credential profile found for device: " + device.getInteger("id"));
         return null;
     }
 
-    // Get credentials from the credential profile
     JsonObject credentials = credentialProfile.getJsonObject("credential");
     if (credentials == null) {
         logger.warn("No credentials found in credential profile for device: " + device.getInteger("id"));
         return null;
     }
 
-    // Create credential object based on protocol
     Credential credential = Credential.fromJson(credentials); //TODO error handling here
-
-    // Add credentials to the parsed device
     parsedDevice.put("credential", credential.toJson());
 
     logger.debug("Parsed device with protocol " + protocol + ": " + parsedDevice.encode());

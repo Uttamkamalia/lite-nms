@@ -18,8 +18,12 @@ public class ConfigKeys {
   public static final String DISCOVERY_REQUEST_TIMEOUT = "discovery_request_timeout";
   public static final String DISCOVERY_PLUGIN_IO_DIR = "discovery_plugin_io_dir";
   public static final String DISCOVERY_PLUGIN_EXECUTABLE = "plugin_executable";
+  public static final String DISCOVERY_WORKER_INSTANCES = "worker_instances";
 
   public static final String POLLING = "polling";
   public static final String POLLING_PLUGIN_EXECUTABLE = "plugin_executable";
-  public static final String POLLING_JOB_TIMEOUT_MS = "job_timeout_ms";
+  public static final String POLLING_JOB_TIMEOUT_MS = "default_polling_job_timeout_ms";
+  public static final String POLLING_BATCH_SIZE = "batch_size";
+  public static final String POLLING_DEFAULT_INTERVAL_MS = "default_polling_interval_ms";
+  public static final String POLLING_WORKER_INSTANCES = "worker_instances";
 }

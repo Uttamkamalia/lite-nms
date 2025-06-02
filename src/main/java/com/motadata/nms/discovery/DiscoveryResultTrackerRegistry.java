@@ -3,27 +3,21 @@ package com.motadata.nms.discovery;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class TrackerStore {
-  // Private static instance variable
-  private static TrackerStore instance;
+public class DiscoveryResultTrackerRegistry {
+  private static DiscoveryResultTrackerRegistry instance;
 
-  // Private map to store trackers
   private final Map<Integer, DiscoveryResultTracker> trackerMap = new ConcurrentHashMap<>();
 
-  // Private constructor to prevent instantiation
-  private TrackerStore() {
-    // Private constructor to enforce singleton pattern
+  private DiscoveryResultTrackerRegistry() {
   }
 
-  // Public static method to get the singleton instance
-  public static synchronized TrackerStore getInstance() {
+  public static synchronized DiscoveryResultTrackerRegistry getInstance() {
     if (instance == null) {
-      instance = new TrackerStore();
+      instance = new DiscoveryResultTrackerRegistry();
     }
     return instance;
   }
 
-  // Instance methods to manipulate the tracker map
   public void put(Integer key, DiscoveryResultTracker value) {
     trackerMap.put(key, value);
   }

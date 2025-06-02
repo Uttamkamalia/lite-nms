@@ -42,6 +42,7 @@ public class DiscoveryJobFactory {
                 return new SnmpDiscoveryJob(
                     batch,
                     context.getPort(),
+                    credentialProfile.getDeviceTypeId(),
                     credentialProfile,
                     context.getDiscoveryProfileId()
                 );
@@ -50,6 +51,7 @@ public class DiscoveryJobFactory {
                 return new SshDiscoveryJob(
                     batch,
                     context.getPort(),
+                    credentialProfile.getDeviceTypeId(),
                     credentialProfile,
                     context.getDiscoveryProfileId()
                 );

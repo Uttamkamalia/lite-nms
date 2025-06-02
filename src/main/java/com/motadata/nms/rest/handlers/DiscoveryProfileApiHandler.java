@@ -121,7 +121,7 @@ public class DiscoveryProfileApiHandler {
   private void registerDiscoveryResponseConsumer(RoutingContext ctx, Integer discoveryProfileId) {
     vertx.eventBus().<JsonObject>consumer(DISCOVERY_RESPONSE.withId(discoveryProfileId) , discoveryResultMsg -> {
       JsonObject result = discoveryResultMsg.body();
-      log.info("Final result: " + result.encodePrettily());
+//      log.debug("Final result: " + result.encodePrettily());
 
       ctx.response()
         .putHeader(CONTENT_TYPE, APPLICATION_JSON)

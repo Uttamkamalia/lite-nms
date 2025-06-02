@@ -73,7 +73,8 @@ public class CredentialProfile {
 
     Integer id = json.getInteger("id");
     String name = json.getString("name");
-    Integer deviceTypeId = json.getInteger("device_type_id");
+    Integer deviceTypeId = json.getInteger("device_type");
+    if (deviceTypeId == null) deviceTypeId = json.getInteger("device_type_id");
     JsonObject credentialsJson = json.getJsonObject("credentials");
     Credential credential = Credential.fromJson(credentialsJson);
     return new CredentialProfile(id, name, deviceTypeId, credential);

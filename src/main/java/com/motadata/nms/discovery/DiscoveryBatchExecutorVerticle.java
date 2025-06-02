@@ -1,6 +1,5 @@
 package com.motadata.nms.discovery;
 
-import com.motadata.nms.commons.VertxProvider;
 import com.motadata.nms.datastore.utils.ConfigKeys;
 import com.motadata.nms.discovery.job.DiscoveryJob;
 import com.motadata.nms.models.ProvisionedDevice;
@@ -19,8 +18,8 @@ import java.util.concurrent.TimeUnit;
 import static com.motadata.nms.datastore.utils.ConfigKeys.*;
 import static com.motadata.nms.utils.EventBusChannels.*;
 
-public class BatchProcessorVerticle extends AbstractVerticle {
-  private static final org.slf4j.Logger log = LoggerFactory.getLogger(BatchProcessorVerticle.class);
+public class DiscoveryBatchExecutorVerticle extends AbstractVerticle {
+  private static final org.slf4j.Logger log = LoggerFactory.getLogger(DiscoveryBatchExecutorVerticle.class);
 
   @Override
   public void start(Promise<Void> startPromise) {
@@ -31,20 +30,16 @@ public class BatchProcessorVerticle extends AbstractVerticle {
       DiscoveryJob batchJob = (DiscoveryJob) message.body();
 
       String inputFile = pluginIODir + batchJob.getInputFileName();
-      String resultFile = pluginIODir + "result-"+batchJob.getId()+".json";
+      String resultFile = pluginIODir + "discovery-result-"+batchJob.getId()+".json";
 
       JsonObject result;
       Process process = null;
 
       try {
-        // Ensure output directory exists
         Files.createDirectories(Paths.get(pluginIODir));
 
-        // Write the input file
         Files.write(Paths.get(inputFile), batchJob.toSerializedJson().getBytes());
-//        Files.createFile(Paths.get(resultFile));
 
-        // Start the Go plugin process
         process = new ProcessBuilder(pluginExecutable, "DISCOVERY", inputFile,resultFile).start();
         long discoveryBatchTimeout = config()
           .getJsonObject(ConfigKeys.DISCOVERY)
@@ -67,10 +62,9 @@ public class BatchProcessorVerticle extends AbstractVerticle {
 
         } else {
           int exitCode = process.exitValue();
-
-          // Read result.json
           String resultContent = Files.readString(Paths.get(resultFile));
           JsonObject outputJson = new JsonObject(resultContent);
+
 
           result = new JsonObject()
             .put("discoveryProfileId", batchJob.getDiscoveryProfileId())
@@ -78,6 +72,7 @@ public class BatchProcessorVerticle extends AbstractVerticle {
             .put("exitCode", exitCode)
             .put("successfulDevices", outputJson.getJsonArray("successful"))
             .put("failedDevices", outputJson.getJsonArray("failed"));
+          log.info("Discovery batch result: {} {}", batchJob.toSerializedJson(),resultContent);
 
           processDiscoveryBatchResult(result, batchJob);
         }
@@ -93,6 +88,7 @@ public class BatchProcessorVerticle extends AbstractVerticle {
       } finally {
         try {
           Files.deleteIfExists(Paths.get(inputFile));
+          Files.deleteIfExists(Paths.get(resultFile));
         } catch (IOException e) {
           log.warn("Failed to delete input file: {}", inputFile, e);
         }
@@ -163,23 +159,27 @@ public class BatchProcessorVerticle extends AbstractVerticle {
       String ip = device.getString("ip");
       Integer port = device.getInteger("port");
       String protocol = device.getString("protocol");
-      String pluginResult = device.getString("plugin_result");
+      String pluginResult = device.getJsonObject("metrics").getString("uname");
 
       // process plugin result
-      String hostname = device.getString(pluginResult);
-      String os = device.getString(pluginResult);
+      String hostname = pluginResult;
+      String os = pluginResult;
 
       ProvisionedDevice provisionedDevice = new ProvisionedDevice();
       provisionedDevice.setIpAddress(ip);
       provisionedDevice.setPort(port);
       provisionedDevice.setProtocol(protocol);
-      provisionedDevice.setDeviceTypeId(1); //TODO
+      provisionedDevice.setDeviceTypeId(job.getDeviceTypeId()); //TODO
       provisionedDevice.setDiscoveryProfileId(job.getDiscoveryProfileId());
       provisionedDevice.setCredentialProfileId(job.getCredentialProfileId());
       provisionedDevice.setMetadata(new JsonObject());
+      provisionedDevice.setHostname(hostname);
+      provisionedDevice.setOs(os);
+      provisionedDevice.setOs(os);
       provisionedDevice.setStatus("PROVISIONED");
 
       // Save the device to the database
+      log.info("Trying to save provisioned device: " + provisionedDevice);
       saveProvisionedDevice(provisionedDevice);
     });
   }

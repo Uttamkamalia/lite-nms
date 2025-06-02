@@ -13,6 +13,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.motadata.nms.utils.EventBusChannels.DISCOVERY_RESPONSE;
@@ -27,6 +28,7 @@ public class DiscoveryResultTracker {
   private final Integer discoveryRequestTimeout;
   private final List<String> successfulIps = new CopyOnWriteArrayList<>();
   private final Map<String, String> failedIps = new ConcurrentHashMap<>();
+  private final AtomicBoolean isResponseSent = new AtomicBoolean(false);
 
 
   public DiscoveryResultTracker(Integer discoveryProfileId, Integer totalDevices, String discoveryResponseEventBusChannel, Integer discoveryRequestTimeout) {
@@ -46,9 +48,11 @@ public class DiscoveryResultTracker {
   }
 
   public void addFailure(String ip, String reason) {
-    failedIps.put(ip, reason);
-    if (isResultComplete()) {
-      sendDiscoveryResponse();
+    if(ip != null && !ip.isEmpty() && reason != null && !reason.isEmpty()){
+      failedIps.put(ip, reason);
+      if (isResultComplete()) {
+        sendDiscoveryResponse();
+      }
     }
   }
 
@@ -57,6 +61,10 @@ public class DiscoveryResultTracker {
   }
 
   private void sendDiscoveryResponse() {
+    if(isResponseSent.get()){
+      return;
+    }
+
     JsonObject result = new JsonObject()
       .put("discoveryProfileId", discoveryProfileId)
       .put("success", new JsonArray(successfulIps));
@@ -69,6 +77,7 @@ public class DiscoveryResultTracker {
     result.put("failed", failedIpsWithReason);
 
     VertxProvider.getVertx().eventBus().send(discoveryResponseEventBusChannel, result);
+    isResponseSent.set(true);
   }
 
   private void registerDiscoveryRequestTimeout() {

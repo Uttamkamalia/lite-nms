@@ -182,7 +182,6 @@ public class DiscoveryContextBuilder {
   private Future<DiscoveryContext> createDiscoveryContext(ProfileWithIpsAndCredential data) {
     Integer port = data.credentialProfile.getCredential().getType().getDefaultPort();
 
-
     DiscoveryContext context = new DiscoveryContext(
       data.resolvedIps,
       port,

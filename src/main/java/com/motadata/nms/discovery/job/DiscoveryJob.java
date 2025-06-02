@@ -16,9 +16,9 @@ public abstract class DiscoveryJob {
 
   protected final String id;
 
+  protected Integer deviceTypeId;
   protected Integer discoveryProfileId;
   protected Integer credentialProfileId;
-
 
   protected List<String> batch;
   protected Integer port;
@@ -29,13 +29,14 @@ public abstract class DiscoveryJob {
 
 
   // Full constructor
-  protected DiscoveryJob(List<String> ipBatch, Integer port, Integer discoveryProfileId, Integer credentialProfileId) {
+  protected DiscoveryJob(List<String> ipBatch, Integer port, Integer deviceTypeId, Integer discoveryProfileId, Integer credentialProfileId) {
     this.batch = ipBatch;
     this.port = port;
+    this.deviceTypeId = deviceTypeId;
     this.discoveryProfileId = discoveryProfileId;
     this.credentialProfileId = credentialProfileId;
     this.id = UUID.randomUUID().toString();
-    this.inputFileName = this.id + INPUT_FILE_EXTENSION;
+    this.inputFileName = "discovery-input-"+ this.id + INPUT_FILE_EXTENSION;
   }
   public abstract void extractConnectionDetails(CredentialProfile credentialProfile);
 
@@ -47,6 +48,15 @@ public abstract class DiscoveryJob {
   public Integer getPort() {
     return port;
   }
+
+  public Integer getDeviceTypeId() {
+    return deviceTypeId;
+  }
+
+  public void setDeviceTypeId(Integer deviceTypeId) {
+    this.deviceTypeId = deviceTypeId;
+  }
+
 
   public void setPort(Integer port) {
     this.port = port;

@@ -57,7 +57,13 @@ public enum EventBusChannels {
   METRIC_GROUP_DELETE("metric.group.delete"),
   METRIC_GROUP_GET_WITH_DEVICES("metric.group.get-with-devices"),
 
-  // New channels for ProvisionedDevice
+  METRIC_GROUP_POLLING_TRIGGER("metric.group.polling.trigger"),
+  METRIC_GROUP_POLLING_BATCH_JOBS("metric.group.polling.batch.jobs"),
+  METRIC_GROUP_POLLING_SCHEDULE ("metric.group.polling.schedule"),
+  METRIC_POLLER_EXECUTE("metric.poller.execute"),
+  POLLING_RESULTS_STORE("polling.results.store"),
+  POLLING_ERRORS_STORE("polling.errors.store"),
+
   PROVISIONED_DEVICE_SAVE("provisioned.device.save"),
   PROVISIONED_DEVICE_GET("provisioned.device.get"),
   PROVISIONED_DEVICE_GET_ALL("provisioned.device.get.all"),
@@ -66,14 +72,7 @@ public enum EventBusChannels {
   PROVISIONED_DEVICE_GET_BY_DISCOVERY_PROFILE("provisioned.device.get.by.discovery.profile"),
   PROVISIONED_DEVICE_UPDATE("provisioned.device.update"),
   PROVISIONED_DEVICE_UPDATE_STATUS("provisioned.device.update.status"),
-  PROVISIONED_DEVICE_DELETE("provisioned.device.delete"),
-
-  METRIC_GROUP_POLLING_TRIGGER("metric.group.polling.trigger"),
-  METRIC_GROUP_POLLING_BATCH_JOBS("metric.group.polling.batch.jobs"),
-  METRIC_GROUP_POLLING_SCHEDULE ("metric.group.polling.schedule"),
-  METRIC_POLLER_EXECUTE("metric.poller.execute"),
-  POLLING_RESULTS_STORE("polling.results.store"),
-  POLLING_ERRORS_STORE("polling.errors.store");
+  PROVISIONED_DEVICE_DELETE("provisioned.device.delete");
 
     private static String SEPERATOR = ".";
     private String name;

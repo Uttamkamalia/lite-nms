@@ -25,6 +25,7 @@ public class MetricGroupApiHandler {
     router.post("/metric-group").handler(this::createMetricGroup);
     router.get("/metric-group/:id").handler(this::getMetricGroup);
     router.get("/metric-group-details/:id").handler(this::getMetricGroupDetails);
+    router.get("/metric-group-with-devices-details/:id").handler(this::getMetricGroupWithDevicesDetails);
     router.get("/metric-group").handler(this::getAllMetricGroups);
     router.get("/metric-group/device-type/:deviceTypeId").handler(this::getMetricGroupsByDeviceType);
     router.put("/metric-group/:id").handler(this::updateMetricGroup);
@@ -58,6 +59,21 @@ public class MetricGroupApiHandler {
         routingContext.response()
           .putHeader(CONTENT_TYPE, APPLICATION_JSON)
           .end(reply.result().body().toString());
+      } else {
+        ErrorHandler.respondError(routingContext, reply.cause());
+      }
+    });
+  }
+
+  private void getMetricGroupWithDevicesDetails(RoutingContext routingContext) {
+    String requestId = routingContext.get(RequestIdHandler.REQUEST_ID_KEY);
+    Integer id = RestUtils.parseAndRespond(routingContext, "id", Integer::parseInt, "Metric Group ID cannot be null");
+
+    vertx.eventBus().request(METRIC_GROUP_GET_WITH_DEVICES.name(), id, getRequestIdDeliveryOpts(requestId), reply -> {
+      if (reply.succeeded()) {
+        routingContext.response()
+                .putHeader(CONTENT_TYPE, APPLICATION_JSON)
+                .end(reply.result().body().toString());
       } else {
         ErrorHandler.respondError(routingContext, reply.cause());
       }

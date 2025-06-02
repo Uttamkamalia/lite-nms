@@ -15,8 +15,8 @@ public class SshDiscoveryJob extends DiscoveryJob {
   private String password;
 
 
-  public SshDiscoveryJob(List<String> batch, Integer port, CredentialProfile credentialProfile, Integer discoveryProfileId) {
-    super(batch, port, credentialProfile.getId(), discoveryProfileId);
+  public SshDiscoveryJob(List<String> batch, Integer port, Integer deviceTypeId, CredentialProfile credentialProfile, Integer discoveryProfileId) {
+    super(batch, port,deviceTypeId,  discoveryProfileId, credentialProfile.getId());
 
     // Validate that the credential profile contains SSH credentials
     if (!credentialProfile.isSshCredential()) {
@@ -27,8 +27,8 @@ public class SshDiscoveryJob extends DiscoveryJob {
     extractConnectionDetails(credentialProfile);
   }
 
-  public SshDiscoveryJob(List<String> batch, Integer port, Integer credentialProfileId, Integer discoveryProfileId, String username, String password){
-    super(batch, port, credentialProfileId, discoveryProfileId);
+  public SshDiscoveryJob(List<String> batch, Integer port, Integer deviceTypeId, Integer credentialProfileId, Integer discoveryProfileId, String username, String password){
+    super(batch, port, deviceTypeId, credentialProfileId, discoveryProfileId);
     this.username = username;
     this.password = password;
   }
@@ -95,6 +95,11 @@ public class SshDiscoveryJob extends DiscoveryJob {
       throw new IllegalArgumentException("Port is required for SSH discovery job");
     }
 
+    Integer deviceTypeId = json.getInteger("deviceTypeId");
+    if (deviceTypeId == null) {
+      throw new IllegalArgumentException("Port is required for SSH discovery job");
+    }
+
     Integer discoveryProfileId = json.getInteger("discoveryProfileId");
     if (discoveryProfileId == null) {
       throw new IllegalArgumentException("Discovery profile ID is required for SSH discovery job");
@@ -110,7 +115,7 @@ public class SshDiscoveryJob extends DiscoveryJob {
     String password = json.getString("password");
 
     // Create the job
-    SshDiscoveryJob job = new SshDiscoveryJob(batch, port, credentialProfileId, discoveryProfileId, username, password);
+    SshDiscoveryJob job = new SshDiscoveryJob(batch, port, deviceTypeId, credentialProfileId, discoveryProfileId, username, password);
     // Set command if available
     String command = json.getString("command");
     if (command != null && !command.isEmpty()) {
@@ -179,6 +184,7 @@ public class SshDiscoveryJob extends DiscoveryJob {
     JsonObject deviceJson = this.toDeviceJson();
 
     sb.append("{\"discovery_profile_id\":"+discoveryProfileId+",");
+    sb.append("\"metric_ids\":[\"uname\"],");
 
     sb.append("\"devices\":[");
 

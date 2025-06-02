@@ -4,8 +4,7 @@ package com.motadata.nms;
 import com.motadata.nms.commons.GenericJacksonCodec;
 import com.motadata.nms.commons.VertxProvider;
 import com.motadata.nms.datastore.DatabaseVerticle;
-import com.motadata.nms.discovery.BatchProcessorVerticle;
-import com.motadata.nms.discovery.DiscoveryResultCollectorVerticle;
+import com.motadata.nms.discovery.DiscoveryBatchExecutorVerticle;
 import com.motadata.nms.discovery.DiscoveryVerticle;
 import com.motadata.nms.discovery.context.DiscoveryContextBuilderVerticle;
 import com.motadata.nms.discovery.job.SnmpDiscoveryJob;
@@ -19,7 +18,6 @@ import com.motadata.nms.polling.PollingJobExecutorVerticle;
 import com.motadata.nms.polling.PollingOrchestratorVerticle;
 import com.motadata.nms.polling.PollingSchedulerVerticle;
 import com.motadata.nms.rest.ApiVerticle;
-import com.motadata.nms.rest.handlers.DeviceTypeApiHandler;
 import io.vertx.config.ConfigRetriever;
 import io.vertx.config.ConfigRetrieverOptions;
 import io.vertx.config.ConfigStoreOptions;
@@ -28,7 +26,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.impl.logging.Logger;;
 import io.vertx.core.impl.logging.LoggerFactory;
 
-import java.awt.event.WindowFocusListener;
+import static com.motadata.nms.datastore.utils.ConfigKeys.*;
 
 public class MainVerticle extends AbstractVerticle {
   private static final Logger logger = LoggerFactory.getLogger(MainVerticle.class);
@@ -79,41 +77,38 @@ public class MainVerticle extends AbstractVerticle {
   }
 
   private Future<Void> deployVerticles(JsonObject config) {
-    DeploymentOptions dbWorkerOptions = new DeploymentOptions()
-      .setConfig(config)
-      .setWorker(true)
-      .setInstances(5)
-      .setWorkerPoolSize(5)
-      .setWorkerPoolName("db-worker-pool");
 
-    DeploymentOptions discWorkerOptions = new DeploymentOptions()
+    Integer discoveryWorkerInstanceCount = config.getJsonObject(DISCOVERY).getInteger(DISCOVERY_WORKER_INSTANCES, 1);
+    DeploymentOptions discoveryBatchExecutorOptions = new DeploymentOptions()
       .setConfig(config)
       .setWorker(true)
-      .setWorkerPoolSize(1)
-      .setInstances(1)
-      .setWorkerPoolName("disc-worker-pool");
+      .setInstances(discoveryWorkerInstanceCount)
+      .setWorkerPoolName("discovery-worker-pool");
 
-    DeploymentOptions bWorkerOptions = new DeploymentOptions()
+    Integer pollingWorkerInstanceCount = config.getJsonObject(POLLING).getInteger(POLLING_WORKER_INSTANCES, 1);
+    DeploymentOptions pollingBatchExecutorOptions = new DeploymentOptions()
       .setConfig(config)
       .setWorker(true)
-      .setWorkerPoolSize(1)
-      .setInstances(1)
-      .setWorkerPoolName("batch-worker-pool");
+      .setInstances(pollingWorkerInstanceCount)
+      .setWorkerPoolName("polling-worker-pool");
 
     DeploymentOptions standardOptions = new DeploymentOptions()
       .setConfig(config);
 
     return Future.succeededFuture()
       .compose(v -> vertx.deployVerticle(DatabaseVerticle.class.getName(), standardOptions))
+
       .compose(depId -> vertx.deployVerticle(DiscoveryVerticle.class.getName(), standardOptions))
-      .compose(depId -> vertx.deployVerticle( DiscoveryContextBuilderVerticle.class.getName(), discWorkerOptions))
-      .compose(depId -> vertx.deployVerticle( BatchProcessorVerticle.class.getName(), bWorkerOptions))
+      .compose(depId -> vertx.deployVerticle( DiscoveryContextBuilderVerticle.class.getName(), standardOptions))
+      .compose(depId -> vertx.deployVerticle( DiscoveryBatchExecutorVerticle.class.getName(), discoveryBatchExecutorOptions))
+
       .compose(depId -> vertx.deployVerticle( PollingOrchestratorVerticle.class.getName(), standardOptions))
       .compose(depId -> vertx.deployVerticle( PollingSchedulerVerticle.class.getName(), standardOptions))
-      .compose(depId -> vertx.deployVerticle( PollingJobExecutorVerticle.class.getName(), discWorkerOptions))
+      .compose(depId -> vertx.deployVerticle( PollingJobExecutorVerticle.class.getName(), pollingBatchExecutorOptions))
+
       .compose(depId -> vertx.deployVerticle( ApiVerticle.class.getName(), standardOptions))
       .compose(depId -> {
-        logger.info("All verticles deployed successfully.");
+        logger.info("All Verticles deployed successfully.");
         return Future.succeededFuture();
       });
   }

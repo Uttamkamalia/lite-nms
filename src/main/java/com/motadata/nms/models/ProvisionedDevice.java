@@ -163,6 +163,7 @@ public class ProvisionedDevice {
       ", port=" + port +
       ", discoveryProfileId=" + discoveryProfileId +
       ", credentialProfileId=" + credentialProfileId +
+      ", deviceTypeId=" + deviceTypeId +
       ", hostname='" + hostname + '\'' +
       ", os='" + os + '\'' +
       ", protocol='" + protocol + '\'' +

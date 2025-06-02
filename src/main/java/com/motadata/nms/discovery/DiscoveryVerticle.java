@@ -46,9 +46,6 @@ public class DiscoveryVerticle extends AbstractVerticle {
 
       requestDiscoveryContextBuild(discoveryProfileId, discoverProfileIdMsg);
       discoverProfileIdMsg.reply("Discovery triggered");
-
-//      registerDiscoverySuccessResultConsumer(discoveryProfileId);
-//      registerDiscoveryFailureResultConsumer(discoveryProfileId);
     });
   }
 
@@ -79,7 +76,7 @@ public class DiscoveryVerticle extends AbstractVerticle {
     Integer discoveryProfileId = context.getDiscoveryProfileId();
 
     DiscoveryResultTracker tracker = new DiscoveryResultTracker(discoveryProfileId, context.getTargetIps().size(), DISCOVERY_RESPONSE.withId(discoveryProfileId), discoveryRequestTimeout);
-    TrackerStore.getInstance().put(discoveryProfileId, tracker);
+    DiscoveryResultTrackerRegistry.getInstance().put(discoveryProfileId, tracker);
 //    vertx.sharedData().getLocalMap(DISCOVERY_TRACKERS).put(discoveryProfileId, tracker); not serializable
 
     registerDiscoverySuccessResultConsumer(discoveryProfileId);
@@ -98,14 +95,14 @@ public class DiscoveryVerticle extends AbstractVerticle {
   }
 
   private void registerDiscoverySuccessResultConsumer(Integer discoveryProfileId) {
-    DiscoveryResultTracker tracker = TrackerStore.getInstance().get(discoveryProfileId);
+    DiscoveryResultTracker tracker = DiscoveryResultTrackerRegistry.getInstance().get(discoveryProfileId);
     vertx.eventBus().<String>consumer(DISCOVERY_BATCH_RESULT_SUCCESSFUL.withId(discoveryProfileId), successfulIpMsg -> {
       tracker.addSuccess(successfulIpMsg.body());
     });
   }
 
   private void registerDiscoveryFailureResultConsumer(Integer discoveryProfileId) {
-    DiscoveryResultTracker tracker = TrackerStore.getInstance().get(discoveryProfileId);
+    DiscoveryResultTracker tracker = DiscoveryResultTrackerRegistry.getInstance().get(discoveryProfileId);
     vertx.eventBus().<JsonObject>consumer(DISCOVERY_BATCH_RESULT_FAILED.withId(discoveryProfileId), failedIpMsg -> {
       tracker.addFailure(failedIpMsg.body().getString("ip"), failedIpMsg.body().getString("error"));
     });
