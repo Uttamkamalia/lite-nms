@@ -1,6 +1,5 @@
 package com.motadata.nms.datastore;
 
-import com.motadata.nms.commons.JsonPojoMapper;
 import com.motadata.nms.datastore.dao.*;
 import com.motadata.nms.datastore.utils.ErrorHandler;
 import com.motadata.nms.models.*;

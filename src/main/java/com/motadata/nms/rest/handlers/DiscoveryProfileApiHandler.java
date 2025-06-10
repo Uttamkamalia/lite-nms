@@ -2,9 +2,11 @@ package com.motadata.nms.rest.handlers;
 
 import com.motadata.nms.commons.RequestIdHandler;
 import com.motadata.nms.commons.VertxProvider;
+import com.motadata.nms.discovery.DiscoveryPromiseTracker;
 import com.motadata.nms.models.DiscoveryProfile;
 import com.motadata.nms.rest.utils.ErrorHandler;
 import com.motadata.nms.rest.utils.RestUtils;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -111,21 +113,21 @@ public class DiscoveryProfileApiHandler {
 
         if (discoverySummaryReply.succeeded()) {
           logger.info("Discovery trigger with discovery-profile-id:"+discoveryProfileId);
-          registerDiscoveryResponseConsumer(ctx, discoveryProfileId);
+          Promise<JsonObject> discoveryResponsePromise = Promise.promise();
+          DiscoveryPromiseTracker.getInstance().put(discoveryProfileId, discoveryResponsePromise);
+
+          discoveryResponsePromise.future()
+
+            .onFailure(cause -> ErrorHandler.respondError(ctx, cause))
+
+            .onSuccess(summary ->  {
+              DiscoveryPromiseTracker.getInstance().remove(discoveryProfileId);
+              ctx.response().putHeader(CONTENT_TYPE, APPLICATION_JSON).end(summary.encodePrettily());
+            });
+
         } else {
           ErrorHandler.respondError(ctx, discoverySummaryReply.cause());
         }
       });
-  }
-
-  private void registerDiscoveryResponseConsumer(RoutingContext ctx, Integer discoveryProfileId) {
-    vertx.eventBus().<JsonObject>consumer(DISCOVERY_RESPONSE.withId(discoveryProfileId) , discoveryResultMsg -> {
-      JsonObject result = discoveryResultMsg.body();
-//      log.debug("Final result: " + result.encodePrettily());
-
-      ctx.response()
-        .putHeader(CONTENT_TYPE, APPLICATION_JSON)
-        .end(result.encodePrettily());
-    });
   }
 }

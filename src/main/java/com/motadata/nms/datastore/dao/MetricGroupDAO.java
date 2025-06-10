@@ -15,9 +15,7 @@ import org.slf4j.LoggerFactory;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 import static com.motadata.nms.rest.utils.ErrorCodes.DAO_ERROR;
 
@@ -493,10 +491,10 @@ public class MetricGroupDAO {
 
                 // Track devices we've already processed to avoid duplicates
                 // since the same device will appear multiple times (once per metric)
-                java.util.Set<Integer> processedDeviceIds = new java.util.HashSet<>();
+                Set<Integer> processedDeviceIds = new HashSet<>();
 
                 // Track metrics we've already processed to avoid duplicates
-                java.util.Set<Integer> processedMetricIds = new java.util.HashSet<>();
+                Set<Integer> processedMetricIds = new HashSet<>();
 
                 for (Row row : rows) {
                     // Process metric group info (only once)
@@ -559,9 +557,9 @@ public class MetricGroupDAO {
                 }
 
                 metricGroup.put("metrics", metrics);
-                result.put("metricGroup", metricGroup);
+                result.put("metric_group", metricGroup);
                 result.put("devices", devices);
-                result.put("deviceCount", devices.size());
+                result.put("device_count", devices.size());
 
                 return result;
             })

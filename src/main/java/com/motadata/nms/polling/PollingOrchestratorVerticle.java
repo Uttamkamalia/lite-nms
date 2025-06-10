@@ -1,7 +1,6 @@
 package com.motadata.nms.polling;
 
 import com.motadata.nms.commons.NMSException;
-import com.motadata.nms.commons.VertxProvider;
 import com.motadata.nms.models.credential.Credential;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
@@ -18,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import static com.motadata.nms.commons.SharedMapUtils.getPollingJobsMap;
 import static com.motadata.nms.datastore.utils.ConfigKeys.*;
 import static com.motadata.nms.utils.EventBusChannels.*;
 
@@ -25,10 +25,6 @@ public class PollingOrchestratorVerticle extends AbstractVerticle {
   private static final Logger logger = LoggerFactory.getLogger(PollingOrchestratorVerticle.class);
 
   private static  int pollingBatchSize = 10; // Number of devices per batch
-  private static final int pollingDefaultTimeout = 10;
-
-  private static final String POLLING_JOBS_MAP = "polling-jobs";
-  private static final String SCHEDULED_TIMERS_MAP = "scheduled-polling-timers";
 
   @Override
   public void start(Promise<Void> startPromise) {
@@ -54,7 +50,7 @@ public class PollingOrchestratorVerticle extends AbstractVerticle {
         message.reply(new JsonObject()
           .put("status", "success")
           .put("message", "Polling triggered for metric group " + metricGroupId)
-          .put("deviceCount", pollingContext.getInteger("deviceCount", 0)));
+          .put("device_count", pollingContext.getInteger("deviceCount", 0)));
       })
       .onFailure(err -> {
         logger.error("Failed to build polling context for metric group: " + metricGroupId, err);
@@ -66,7 +62,6 @@ public class PollingOrchestratorVerticle extends AbstractVerticle {
     String requestId = UUID.randomUUID().toString();
     DeliveryOptions options = new DeliveryOptions().addHeader("requestId", requestId);
 
-    // TODO : check if this long list of devices can be streamed in batches than in bulk
     return vertx.eventBus().<JsonObject>request(METRIC_GROUP_GET_WITH_DEVICES.name(), metricGroupId, options)
       .map(Message::body)
       .compose(result -> {
@@ -75,7 +70,7 @@ public class PollingOrchestratorVerticle extends AbstractVerticle {
         }
 
         logger.info("Built polling context for metric group " + metricGroupId +
-                   " with " + result.getInteger("deviceCount", 0) + " devices");
+                   " with " + result.getInteger("device_count", 0) + " devices");
 
         return Future.succeededFuture(result);
       });
@@ -83,12 +78,12 @@ public class PollingOrchestratorVerticle extends AbstractVerticle {
 
   private void processPollingContext(JsonObject pollingContext) {
     JsonArray devices = pollingContext.getJsonArray("devices");
-    JsonObject metricGroup = pollingContext.getJsonObject("metricGroup");
+    JsonObject metricGroup = pollingContext.getJsonObject("metric_group");
     Integer metricGroupId = metricGroup.getInteger("id");
     Integer deviceTypeId = metricGroup.getJsonObject("device_type").getInteger("id");
 
     if (devices == null || devices.isEmpty()) {
-      logger.warn("No devices found for polling metric group: " + metricGroupId);
+      logger.warn("No devices found for polling metric group: " + metricGroupId + " .Skipping further polling");
       return;
     }
 
@@ -143,16 +138,6 @@ public class PollingOrchestratorVerticle extends AbstractVerticle {
       .put("polling_interval_seconds", pollingIntervalSeconds);
 
     vertx.eventBus().send(METRIC_GROUP_POLLING_SCHEDULE.name(), batchJob);
-  }
-
-  public static LocalMap<String, JsonObject> getPollingJobsMap(Integer metricGroupId, int deviceTypeId) {
-    String mapName = POLLING_JOBS_MAP + "-" + metricGroupId + "-" + deviceTypeId;
-    return VertxProvider.getVertx().sharedData().getLocalMap(mapName);
-  }
-
-  public static LocalMap<String, Long> getMetricGroupPollingScheduledJobTimersMap(Integer metricGroupId, int deviceTypeId) {
-    String mapName = SCHEDULED_TIMERS_MAP + "-" + metricGroupId + "-" + deviceTypeId;
-    return VertxProvider.getVertx().sharedData().getLocalMap(mapName);
   }
 
   private JsonObject parseJobBasedOnProtocol(JsonObject device) {

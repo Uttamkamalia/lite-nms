@@ -1,5 +1,6 @@
 package com.motadata.nms;
 
+import com.motadata.nms.practice.EventThreadsDemo;
 import io.vertx.core.Vertx;
 import io.vertx.pgclient.PgBuilder;
 import io.vertx.sqlclient.PoolOptions;

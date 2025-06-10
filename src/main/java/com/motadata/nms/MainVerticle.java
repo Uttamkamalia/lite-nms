@@ -4,7 +4,6 @@ package com.motadata.nms;
 import com.motadata.nms.commons.GenericJacksonCodec;
 import com.motadata.nms.commons.VertxProvider;
 import com.motadata.nms.datastore.DatabaseVerticle;
-import com.motadata.nms.discovery.DiscoveryBatchExecutorVerticle;
 import com.motadata.nms.discovery.DiscoveryVerticle;
 import com.motadata.nms.discovery.context.DiscoveryContextBuilderVerticle;
 import com.motadata.nms.discovery.job.SnmpDiscoveryJob;
@@ -96,11 +95,10 @@ public class MainVerticle extends AbstractVerticle {
       .setConfig(config);
 
     return Future.succeededFuture()
-      .compose(v -> vertx.deployVerticle(DatabaseVerticle.class.getName(), standardOptions))
+      .compose(v -> vertx.deployVerticle( DatabaseVerticle.class.getName(), standardOptions))
 
-      .compose(depId -> vertx.deployVerticle(DiscoveryVerticle.class.getName(), standardOptions))
+      .compose(depId -> vertx.deployVerticle( DiscoveryVerticle.class.getName(), standardOptions))
       .compose(depId -> vertx.deployVerticle( DiscoveryContextBuilderVerticle.class.getName(), standardOptions))
-      .compose(depId -> vertx.deployVerticle( DiscoveryBatchExecutorVerticle.class.getName(), discoveryBatchExecutorOptions))
 
       .compose(depId -> vertx.deployVerticle( PollingOrchestratorVerticle.class.getName(), standardOptions))
       .compose(depId -> vertx.deployVerticle( PollingSchedulerVerticle.class.getName(), standardOptions))

@@ -9,9 +9,10 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.shareddata.LocalMap;
 
 
+import static com.motadata.nms.commons.SharedMapUtils.getPollingJobsMap;
 import static com.motadata.nms.datastore.utils.ConfigKeys.POLLING;
 import static com.motadata.nms.datastore.utils.ConfigKeys.POLLING_DEFAULT_INTERVAL_MS;
-import static com.motadata.nms.polling.PollingOrchestratorVerticle.getMetricGroupPollingScheduledJobTimersMap;
+import static com.motadata.nms.commons.SharedMapUtils.getMetricGroupPollingScheduledJobTimersMap;
 import static com.motadata.nms.utils.EventBusChannels.*;
 
 
@@ -63,7 +64,7 @@ public class PollingSchedulerVerticle extends AbstractVerticle {
         long intervalMs = pollingInterval * 1000L;
 
         return vertx.setPeriodic(intervalMs, timerId -> {
-            LocalMap<String, JsonObject> pollingJobsMap = PollingOrchestratorVerticle.getPollingJobsMap(metricGroupId, deviceTypeId);
+            LocalMap<String, JsonObject> pollingJobsMap = getPollingJobsMap(metricGroupId, deviceTypeId);
 
             if (pollingJobsMap.isEmpty() ) {
                 logger.warn("No polling jobs found for metric group " + metricGroupId);

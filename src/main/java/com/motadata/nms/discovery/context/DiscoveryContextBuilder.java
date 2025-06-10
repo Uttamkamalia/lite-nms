@@ -26,11 +26,6 @@ public class DiscoveryContextBuilder {
     this.vertx = VertxProvider.getVertx();
   }
 
-  /**
-   * Build a DiscoveryContext from a DiscoveryProfile ID
-   * @param profileId The ID of the DiscoveryProfile to use
-   * @return A Future containing the built DiscoveryContext
-   */
   public Future<DiscoveryContext> buildFromProfileId(Integer profileId) {
     logger.info("Building discovery context for profile ID: " + profileId);
 
@@ -39,14 +34,9 @@ public class DiscoveryContextBuilder {
     }
 
     return getDiscoveryProfile(profileId)
-      .compose(profile -> build(profile));
+      .compose(this::build);
   }
 
-  /**
-   * Get a DiscoveryProfile by ID using the event bus
-   * @param profileId The ID of the profile to get
-   * @return A Future containing the DiscoveryProfile
-   */
   private Future<DiscoveryProfile> getDiscoveryProfile(Integer profileId) {
     Promise<DiscoveryProfile> promise = Promise.promise();
 
@@ -58,7 +48,7 @@ public class DiscoveryContextBuilder {
             promise.fail(NMSException.notFound("Discovery Profile not found"));
             return;
           }
-          //TODO check json == null defined twice here
+
           DiscoveryProfile profile = DiscoveryProfile.fromJson(profileJson);
           promise.complete(profile);
         } catch (Exception e) {
@@ -72,11 +62,6 @@ public class DiscoveryContextBuilder {
     return promise.future();
   }
 
-  /**
-   * Get a CredentialProfile by ID using the event bus
-   * @param profileId The ID of the profile to get
-   * @return A Future containing the CredentialProfile
-   */
   private Future<CredentialProfile> getCredentialProfile(Integer profileId) {
     Promise<CredentialProfile> promise = Promise.promise();
 

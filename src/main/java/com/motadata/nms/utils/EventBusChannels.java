@@ -58,7 +58,6 @@ public enum EventBusChannels {
   METRIC_GROUP_GET_WITH_DEVICES("metric.group.get-with-devices"),
 
   METRIC_GROUP_POLLING_TRIGGER("metric.group.polling.trigger"),
-  METRIC_GROUP_POLLING_BATCH_JOBS("metric.group.polling.batch.jobs"),
   METRIC_GROUP_POLLING_SCHEDULE ("metric.group.polling.schedule"),
   METRIC_POLLER_EXECUTE("metric.poller.execute"),
   POLLING_RESULTS_STORE("polling.results.store"),

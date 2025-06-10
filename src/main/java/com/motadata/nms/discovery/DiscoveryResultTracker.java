@@ -3,6 +3,7 @@ package com.motadata.nms.discovery;
 import com.motadata.nms.commons.VertxProvider;
 import com.motadata.nms.rest.utils.ErrorCodes;
 import com.motadata.nms.utils.EventBusChannels;
+import io.vertx.core.Promise;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -24,9 +25,8 @@ public class DiscoveryResultTracker {
 
   private final Integer totalDevices;
   private final Integer discoveryProfileId;
-  private final String discoveryResponseEventBusChannel;
   private final Integer discoveryRequestTimeout;
-  private final List<String> successfulIps = new CopyOnWriteArrayList<>();
+  private final Set<String> successfulIps = ConcurrentHashMap.newKeySet();
   private final Map<String, String> failedIps = new ConcurrentHashMap<>();
   private final AtomicBoolean isResponseSent = new AtomicBoolean(false);
 
@@ -34,7 +34,6 @@ public class DiscoveryResultTracker {
   public DiscoveryResultTracker(Integer discoveryProfileId, Integer totalDevices, String discoveryResponseEventBusChannel, Integer discoveryRequestTimeout) {
     this.discoveryProfileId = discoveryProfileId;
     this.totalDevices = totalDevices;
-    this.discoveryResponseEventBusChannel = discoveryResponseEventBusChannel;
     this.discoveryRequestTimeout = discoveryRequestTimeout;
 
     registerDiscoveryRequestTimeout();
@@ -67,7 +66,7 @@ public class DiscoveryResultTracker {
 
     JsonObject result = new JsonObject()
       .put("discoveryProfileId", discoveryProfileId)
-      .put("success", new JsonArray(successfulIps));
+      .put("success", new JsonArray(successfulIps.stream().toList()));
 
     JsonArray failedIpsWithReason = new JsonArray();
     failedIps
@@ -76,8 +75,13 @@ public class DiscoveryResultTracker {
 
     result.put("failed", failedIpsWithReason);
 
-    VertxProvider.getVertx().eventBus().send(discoveryResponseEventBusChannel, result);
-    isResponseSent.set(true);
+    Promise<JsonObject> promise = DiscoveryPromiseTracker.getInstance().get(discoveryProfileId);
+    if (promise != null) {
+      promise.complete(result);
+      isResponseSent.set(true);
+    } else {
+      logger.error("Failed to send discovery response for discovery-profile-id:" + discoveryProfileId + " as discovery-response-promise is not registered");
+    }
   }
 
   private void registerDiscoveryRequestTimeout() {
@@ -88,7 +92,7 @@ public class DiscoveryResultTracker {
     });
   }
 
-  public List<String> getSuccessfulIps() {
+  public Set<String> getSuccessfulIps() {
     return successfulIps;
   }
 

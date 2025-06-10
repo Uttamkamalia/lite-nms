@@ -1,0 +1,11 @@
+
+1) ZMQ
+2) Vertx internals
+3) polling based on file and avoid using lock. Refactor the code.
+4) AiOPs LMS
+
+::::::::::: Subnet demo (127.10.0.0/22) :::::::::::::
+device-type : 1
+credential-profile:1
+discovery-profile-id : 1
+
