@@ -1,5 +1,7 @@
 package com.motadata.nms.polling;
 
+import com.motadata.nms.commons.VertxProvider;
+import com.motadata.nms.datastore.utils.ConfigKeys;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.impl.logging.Logger;
@@ -10,19 +12,23 @@ import io.vertx.core.shareddata.LocalMap;
 
 
 import static com.motadata.nms.commons.SharedMapUtils.getPollingJobsMap;
-import static com.motadata.nms.datastore.utils.ConfigKeys.POLLING;
-import static com.motadata.nms.datastore.utils.ConfigKeys.POLLING_DEFAULT_INTERVAL_MS;
 import static com.motadata.nms.commons.SharedMapUtils.getMetricGroupPollingScheduledJobTimersMap;
+import static com.motadata.nms.datastore.utils.ConfigKeys.*;
+import static com.motadata.nms.datastore.utils.ConfigKeys.POLLING_PLUGIN_EXECUTABLE;
 import static com.motadata.nms.utils.EventBusChannels.*;
 
 
 public class PollingSchedulerVerticle extends AbstractVerticle {
     private static final Logger logger = LoggerFactory.getLogger(PollingSchedulerVerticle.class);
     private  Integer defaultPollingIntervalMs ;
+    private Integer pollingJobTimeoutMs;
+    private String pluginExecutable;
 
     @Override
     public void start(Promise<Void> startPromise) {
       defaultPollingIntervalMs = config().getJsonObject(POLLING).getInteger(POLLING_DEFAULT_INTERVAL_MS, 60000);
+      pollingJobTimeoutMs = config().getJsonObject(ConfigKeys.POLLING).getInteger(POLLING_JOB_TIMEOUT_MS, 10000);
+      pluginExecutable = config().getJsonObject(ConfigKeys.POLLING).getString(POLLING_PLUGIN_EXECUTABLE);
 
         vertx.eventBus().consumer(METRIC_GROUP_POLLING_SCHEDULE.name(), message -> {
             JsonObject request = (JsonObject) message.body();
@@ -47,13 +53,8 @@ public class PollingSchedulerVerticle extends AbstractVerticle {
             long timerId = schedulePollingTask(metricGroupId, deviceTypeId, pollingInterval);
             scheduledTimers.put(metricGroupScheduledTimerKey, timerId);
 
-//            logger.info("Scheduled polling for metric group " + metricGroupId  + " for device type " + deviceTypeId +
-//                       " with interval " + pollingInterval + " seconds");
-
-            message.reply(new JsonObject()
-                .put("status", "success")
-                .put("message", "Polling scheduled")
-                .put("timerId", timerId));
+            logger.info("Scheduled polling for metric group " + metricGroupId  + " for device type " + deviceTypeId +
+                       " with interval " + pollingInterval + " seconds");
         });
 
         logger.info("PollingSchedulerVerticle started");
@@ -70,11 +71,16 @@ public class PollingSchedulerVerticle extends AbstractVerticle {
                 logger.warn("No polling jobs found for metric group " + metricGroupId);
                 return;
             }
-//            logger.debug("Executing polling for metric group " + metricGroupId + " with " + pollingJobsMap.size() + " jobs");
+            logger.debug("Executing polling for metric group " + metricGroupId + " with " + pollingJobsMap.size() + " jobs");
 
             pollingJobsMap.forEach((key, value) -> {
-//              logger.debug("Sending Polling-job: " + key + " - " + value + "for execution");
-              vertx.eventBus().send(METRIC_POLLER_EXECUTE.name(), value);
+              logger.debug("Sending Polling-job execution: " + key + " - " + value + "for execution");
+              PollingExecution pollingExecution = new PollingExecution(value, pluginExecutable, pollingJobTimeoutMs);
+              VertxProvider.getVertx().executeBlocking(pollingExecution::execute, false, res -> {
+                if (res.failed()) {
+                  logger.error("Failed to execute polling job: " + key, res.cause());
+                }
+              });
             });
         });
     }

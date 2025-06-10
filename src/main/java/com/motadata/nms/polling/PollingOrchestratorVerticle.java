@@ -109,7 +109,7 @@ public class PollingOrchestratorVerticle extends AbstractVerticle {
       if (deviceBatch.size() >= pollingBatchSize || i == devices.size() - 1) {
         String jobId = UUID.randomUUID().toString();
         JsonObject batchPollingJob = new JsonObject()
-          .put("id", jobId)
+          .put("job_id", jobId)
           .put("metric_group_id", metricGroupId)
           .put("device_type_id", deviceTypeId)
           .put("metric_ids", new JsonArray(pluginIds))
@@ -153,7 +153,7 @@ public class PollingOrchestratorVerticle extends AbstractVerticle {
     }
 
     JsonObject parsedDevice = new JsonObject()
-        .put("id", device.getInteger("id"))
+        .put("device_id", device.getInteger("id"))
         .put("ip", device.getString("ip"))
         .put("port", device.getInteger("port"))
         .put("protocol", protocol);
