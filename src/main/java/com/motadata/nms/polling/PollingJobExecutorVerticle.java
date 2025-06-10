@@ -48,7 +48,7 @@ public class PollingJobExecutorVerticle extends AbstractVerticle {
           ProcessBuilder processBuilder = new ProcessBuilder(pluginExecutable, "POLLING" ,  encodedJob);
           processBuilder.redirectErrorStream(true);
 
-          logger.debug("Executing polling plugin: {}", String.join(" ", processBuilder.command()));
+//          logger.debug("Executing polling plugin: {}", String.join(" ", processBuilder.command()));
           process = processBuilder.start();
 
           boolean finished = process.waitFor(pollingJobTimeoutMs, TimeUnit.MILLISECONDS);

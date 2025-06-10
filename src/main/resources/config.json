@@ -16,10 +16,10 @@
   },
   "polling": {
     "worker_instances": 4,
-    "batch_size": 1,
+    "batch_size": 10,
     "default_polling_interval_ms": 60000,
     "plugin_executable": "/home/uttam-kamalia/Documents/goprac/go-plugin/ssh-plugin/ssh_plugin",
-    "job_timeout_ms": 30000
+    "default_polling_job_timeout_ms": 10000
   },
   "http": {
     "port": 10200

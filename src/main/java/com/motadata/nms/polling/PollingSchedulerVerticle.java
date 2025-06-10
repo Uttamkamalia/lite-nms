@@ -47,8 +47,8 @@ public class PollingSchedulerVerticle extends AbstractVerticle {
             long timerId = schedulePollingTask(metricGroupId, deviceTypeId, pollingInterval);
             scheduledTimers.put(metricGroupScheduledTimerKey, timerId);
 
-            logger.info("Scheduled polling for metric group " + metricGroupId  + " for device type " + deviceTypeId +
-                       " with interval " + pollingInterval + " seconds");
+//            logger.info("Scheduled polling for metric group " + metricGroupId  + " for device type " + deviceTypeId +
+//                       " with interval " + pollingInterval + " seconds");
 
             message.reply(new JsonObject()
                 .put("status", "success")
@@ -70,10 +70,10 @@ public class PollingSchedulerVerticle extends AbstractVerticle {
                 logger.warn("No polling jobs found for metric group " + metricGroupId);
                 return;
             }
-            logger.debug("Executing polling for metric group " + metricGroupId + " with " + pollingJobsMap.size() + " jobs");
+//            logger.debug("Executing polling for metric group " + metricGroupId + " with " + pollingJobsMap.size() + " jobs");
 
             pollingJobsMap.forEach((key, value) -> {
-              logger.debug("Sending Polling-job: " + key + " - " + value + "for execution");
+//              logger.debug("Sending Polling-job: " + key + " - " + value + "for execution");
               vertx.eventBus().send(METRIC_POLLER_EXECUTE.name(), value);
             });
         });
