@@ -31,7 +31,7 @@ public class DiscoveryResultTracker {
   private final AtomicBoolean isResponseSent = new AtomicBoolean(false);
 
 
-  public DiscoveryResultTracker(Integer discoveryProfileId, Integer totalDevices, String discoveryResponseEventBusChannel, Integer discoveryRequestTimeout) {
+  public DiscoveryResultTracker(Integer discoveryProfileId, Integer totalDevices, Integer discoveryRequestTimeout) {
     this.discoveryProfileId = discoveryProfileId;
     this.totalDevices = totalDevices;
     this.discoveryRequestTimeout = discoveryRequestTimeout;
@@ -53,6 +53,9 @@ public class DiscoveryResultTracker {
         sendDiscoveryResponse();
       }
     }
+  }
+  private void triggerAvailabilityMetricGroup(){
+
   }
 
   public boolean isResultComplete() {

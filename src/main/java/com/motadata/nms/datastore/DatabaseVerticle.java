@@ -1,5 +1,6 @@
 package com.motadata.nms.datastore;
 
+import com.motadata.nms.commons.VertxProvider;
 import com.motadata.nms.datastore.dao.*;
 import com.motadata.nms.datastore.utils.ErrorHandler;
 import com.motadata.nms.models.*;
@@ -7,11 +8,12 @@ import com.motadata.nms.models.credential.CredentialProfile;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.impl.logging.Logger;;
-import io.vertx.core.impl.logging.LoggerFactory;
+
 import io.vertx.pgclient.PgConnectOptions;
 import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 import static com.motadata.nms.datastore.utils.ConfigKeys.*;
@@ -58,6 +60,7 @@ public class DatabaseVerticle extends AbstractVerticle {
 
   @Override
   public void start() {
+    registerExceptionHandler();
     initPool();
     initDao();
     registerDeviceTypeEventConsumers();
@@ -364,4 +367,11 @@ public class DatabaseVerticle extends AbstractVerticle {
           .onFailure(err -> ErrorHandler.replyFailure(msg, logger, err));
       });
   }
+
+  private void registerExceptionHandler(){
+    VertxProvider.getVertx().getOrCreateContext().exceptionHandler(cause -> {
+      logger.error("Database Verticle context exception handler: " + cause.getMessage(), cause);
+    });
+  }
 }
+

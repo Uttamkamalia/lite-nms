@@ -1,6 +1,7 @@
 package com.motadata.nms.discovery.context;
 
 import com.motadata.nms.commons.NMSException;
+import com.motadata.nms.commons.VertxProvider;
 import com.motadata.nms.rest.utils.ErrorCodes;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
@@ -21,6 +22,8 @@ public class DiscoveryContextBuilderVerticle extends AbstractVerticle {
 
   @Override
   public void start(Promise<Void> startPromise) {
+    registerContextBuilderExceptionHandler();
+
     contextBuilder = new DiscoveryContextBuilder();
 
     registerDiscoveryContextBuildConsumer();
@@ -48,6 +51,12 @@ public class DiscoveryContextBuilderVerticle extends AbstractVerticle {
             discoveryProfileIdMsg.fail(ErrorCodes.INTERNAL_ERROR, "Failed to build discovery context: " + err.getMessage()+err.getCause());
           }
         });
+    });
+  }
+
+  private void registerContextBuilderExceptionHandler() {
+    VertxProvider.getVertx().getOrCreateContext().exceptionHandler(cause -> {
+      logger.error("Discovery Context Builder Verticle context exception handler: " + cause.getMessage(), cause);
     });
   }
 }

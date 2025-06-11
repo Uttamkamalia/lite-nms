@@ -40,6 +40,8 @@ public class DiscoveryVerticle extends AbstractVerticle {
     pluginExecutableDir = config().getJsonObject(ConfigKeys.DISCOVERY).getString(DISCOVERY_PLUGIN_EXECUTABLE_DIR);
     discoveryBatchTimeout = config().getJsonObject(ConfigKeys.DISCOVERY).getInteger(DISCOVERY_BATCH_TIMEOUT_MS, 30000);
 
+    registerExceptionHandler();
+
     registerDiscoveryTriggerConsumer();
 
     startPromise.complete();
@@ -81,7 +83,7 @@ public class DiscoveryVerticle extends AbstractVerticle {
     DiscoveryContext context = DiscoveryContext.fromJson(contextJson);
     Integer discoveryProfileId = context.getDiscoveryProfileId();
 
-    DiscoveryResultTracker tracker = new DiscoveryResultTracker(discoveryProfileId, context.getTargetIps().size(), DISCOVERY_RESPONSE.withId(discoveryProfileId), discoveryRequestTimeout);
+    DiscoveryResultTracker tracker = new DiscoveryResultTracker(discoveryProfileId, context.getTargetIps().size(), discoveryRequestTimeout);
     DiscoveryResultTrackerRegistry.getInstance().put(discoveryProfileId, tracker);
 
     batchAndSendForExecution(context);
@@ -113,5 +115,11 @@ public class DiscoveryVerticle extends AbstractVerticle {
           }
         });
       });
+  }
+
+  private void registerExceptionHandler() {
+    vertx.getOrCreateContext().exceptionHandler(cause -> {
+      logger.error("Discovery Verticle context exception handler: " + cause.getMessage(), cause);
+    });
   }
 }

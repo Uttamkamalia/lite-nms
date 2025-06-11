@@ -25,5 +25,6 @@ public class ConfigKeys {
   public static final String POLLING_JOB_TIMEOUT_MS = "default_polling_job_timeout_ms";
   public static final String POLLING_BATCH_SIZE = "batch_size";
   public static final String POLLING_DEFAULT_INTERVAL_MS = "default_polling_interval_ms";
-  public static final String POLLING_WORKER_INSTANCES = "worker_instances";
+  public static final String POLLING_SCHEDULER_INSTANCES = "scheduler_instances";
+  public static final String POLLING_WORKER_POOL_SIZE = "polling_worker_pool_size";
 }

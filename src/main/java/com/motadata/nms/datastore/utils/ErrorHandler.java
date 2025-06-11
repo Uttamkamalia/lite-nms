@@ -3,7 +3,8 @@ package com.motadata.nms.datastore.utils;
 import com.motadata.nms.commons.NMSException;
 import com.motadata.nms.rest.utils.ErrorCodes;
 import io.vertx.core.eventbus.Message;
-import io.vertx.core.impl.logging.Logger;;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static com.motadata.nms.commons.RequestIdHandler.REQUEST_ID_KEY;
 import static com.motadata.nms.commons.RequestIdHandler.withRequestId;

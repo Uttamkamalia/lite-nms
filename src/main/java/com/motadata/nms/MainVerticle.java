@@ -13,7 +13,6 @@ import com.motadata.nms.models.credential.Credential;
 import com.motadata.nms.models.credential.CredentialProfile;
 import com.motadata.nms.models.credential.SnmpCredential;
 import com.motadata.nms.models.credential.SshCredential;
-import com.motadata.nms.polling.PollingJobExecutorVerticle;
 import com.motadata.nms.polling.PollingOrchestratorVerticle;
 import com.motadata.nms.polling.PollingSchedulerVerticle;
 import com.motadata.nms.rest.ApiVerticle;
@@ -22,13 +21,14 @@ import io.vertx.config.ConfigRetrieverOptions;
 import io.vertx.config.ConfigStoreOptions;
 import io.vertx.core.*;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.impl.logging.Logger;;
+import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 
 import static com.motadata.nms.datastore.utils.ConfigKeys.*;
 
 public class MainVerticle extends AbstractVerticle {
   private static final Logger logger = LoggerFactory.getLogger(MainVerticle.class);
+  public static final String CONFIG_FILE_PATH = "src/main/resources/config.json";
 
   public void start(Promise<Void> startPromise) {
     VertxProvider.initialize(vertx);
@@ -36,6 +36,7 @@ public class MainVerticle extends AbstractVerticle {
     loadConfig()
       .compose(this::deployVerticles)
       .compose(v -> registerEventBusCodecs())
+      .compose(v -> registerVertxGlobalExceptionHandler())
       .onSuccess(v -> startPromise.complete())
       .onFailure(err -> {
         logger.error("Error while bootstrapping:", err);
@@ -43,11 +44,18 @@ public class MainVerticle extends AbstractVerticle {
       });
   }
 
+  private Future<Void> registerVertxGlobalExceptionHandler() {
+    vertx.exceptionHandler(cause -> {
+      logger.error("Global exception handler: " + cause.getMessage(), cause);
+    });
+    return Future.succeededFuture();
+  }
+
   private Future<JsonObject> loadConfig() {
     ConfigStoreOptions fileStore = new ConfigStoreOptions()
       .setType("file")
       .setFormat("json")
-      .setConfig(new JsonObject().put("path", "src/main/resources/config.json"));
+      .setConfig(new JsonObject().put("path", CONFIG_FILE_PATH));
 
     ConfigRetriever retriever = ConfigRetriever.create(vertx,
       new ConfigRetrieverOptions().addStore(fileStore));
@@ -77,32 +85,29 @@ public class MainVerticle extends AbstractVerticle {
 
   private Future<Void> deployVerticles(JsonObject config) {
 
-    Integer discoveryWorkerInstanceCount = config.getJsonObject(DISCOVERY).getInteger(DISCOVERY_WORKER_INSTANCES, 1);
-    DeploymentOptions discoveryBatchExecutorOptions = new DeploymentOptions()
+    DeploymentOptions dbOptions = new DeploymentOptions()
       .setConfig(config)
-      .setWorker(true)
-      .setInstances(discoveryWorkerInstanceCount)
-      .setWorkerPoolName("discovery-worker-pool");
+      .setInstances(1);
 
-    Integer pollingWorkerInstanceCount = config.getJsonObject(POLLING).getInteger(POLLING_WORKER_INSTANCES, 1);
-    DeploymentOptions pollingBatchExecutorOptions = new DeploymentOptions()
+    Integer pollingSchedularInstanceCount = config.getJsonObject(POLLING).getInteger(POLLING_SCHEDULER_INSTANCES, 1);
+    Integer pollingWorkerPoolSize = config.getJsonObject(POLLING).getInteger(POLLING_WORKER_POOL_SIZE, 2);
+    DeploymentOptions pollingSchedularDeploymentOptions = new DeploymentOptions()
       .setConfig(config)
-      .setWorker(true)
-      .setInstances(pollingWorkerInstanceCount)
-      .setWorkerPoolName("polling-worker-pool");
+      .setInstances(pollingSchedularInstanceCount) // polling scheduler threads required to handle vertx.setPeriodic()
+      .setWorkerPoolName("polling-worker-pool")
+      .setWorkerPoolSize(pollingWorkerPoolSize); // worker threads required to handle polling-executions via executeBlocking()
 
     DeploymentOptions standardOptions = new DeploymentOptions()
       .setConfig(config);
 
     return Future.succeededFuture()
-      .compose(v -> vertx.deployVerticle( DatabaseVerticle.class.getName(), standardOptions))
+      .compose(v -> vertx.deployVerticle( DatabaseVerticle.class.getName(), dbOptions))
 
       .compose(depId -> vertx.deployVerticle( DiscoveryVerticle.class.getName(), standardOptions))
       .compose(depId -> vertx.deployVerticle( DiscoveryContextBuilderVerticle.class.getName(), standardOptions))
 
       .compose(depId -> vertx.deployVerticle( PollingOrchestratorVerticle.class.getName(), standardOptions))
-      .compose(depId -> vertx.deployVerticle( PollingSchedulerVerticle.class.getName(), standardOptions))
-      .compose(depId -> vertx.deployVerticle( PollingJobExecutorVerticle.class.getName(), pollingBatchExecutorOptions))
+      .compose(depId -> vertx.deployVerticle( PollingSchedulerVerticle.class.getName(), pollingSchedularDeploymentOptions)) // set a private worker thread pool
 
       .compose(depId -> vertx.deployVerticle( ApiVerticle.class.getName(), standardOptions))
       .compose(depId -> {

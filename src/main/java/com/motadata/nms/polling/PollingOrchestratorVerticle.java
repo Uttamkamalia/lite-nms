@@ -11,13 +11,11 @@ import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.shareddata.LocalMap;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import static com.motadata.nms.commons.SharedMapUtils.getPollingJobsMap;
 import static com.motadata.nms.datastore.utils.ConfigKeys.*;
 import static com.motadata.nms.utils.EventBusChannels.*;
 
@@ -28,6 +26,8 @@ public class PollingOrchestratorVerticle extends AbstractVerticle {
 
   @Override
   public void start(Promise<Void> startPromise) {
+    registerExceptionHandler();
+
     pollingBatchSize = config().getJsonObject(POLLING).getInteger(POLLING_BATCH_SIZE);
 
     vertx.eventBus().consumer(METRIC_GROUP_POLLING_TRIGGER.name(), this::handlePollingTrigger);
@@ -50,7 +50,7 @@ public class PollingOrchestratorVerticle extends AbstractVerticle {
         message.reply(new JsonObject()
           .put("status", "success")
           .put("message", "Polling triggered for metric group " + metricGroupId)
-          .put("device_count", pollingContext.getInteger("deviceCount", 0)));
+          .put("device_count", pollingContext.getInteger("device_count", 0)));
       })
       .onFailure(err -> {
         logger.error("Failed to build polling context for metric group: " + metricGroupId, err);
@@ -87,8 +87,6 @@ public class PollingOrchestratorVerticle extends AbstractVerticle {
       return;
     }
 
-    LocalMap<String, JsonObject> pollingJobsMap = getPollingJobsMap(metricGroupId, deviceTypeId);
-
     JsonArray metrics = metricGroup.getJsonArray("metrics", new JsonArray());
     List<String> pluginIds = metrics
       .stream()
@@ -115,8 +113,7 @@ public class PollingOrchestratorVerticle extends AbstractVerticle {
           .put("metric_ids", new JsonArray(pluginIds))
           .put("devices", new JsonArray(deviceBatch));
 
-        pollingJobsMap.put(jobId, batchPollingJob);
-
+        ActiveMetricGroupRegistry.getInstance().put(deviceTypeId, metricGroupId, batchPollingJob);
         sendPollingBatchForScheduling(jobId, metricGroupId, deviceTypeId, pollingInterval);
 
         totalDevices += deviceBatch.size();
@@ -175,5 +172,11 @@ public class PollingOrchestratorVerticle extends AbstractVerticle {
 
     logger.debug("Parsed device with protocol " + protocol + ": " + parsedDevice.encode());
     return parsedDevice;
+  }
+
+  private void registerExceptionHandler() {
+    vertx.exceptionHandler(t -> {
+      logger.error("Uncaught exception in PollingOrchestratorVerticle", t);
+    });
   }
 }

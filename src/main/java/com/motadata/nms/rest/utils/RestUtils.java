@@ -17,7 +17,7 @@ public class RestUtils {
     T pojo = null;
     try {
       JsonObject obj = ctx.body().asJsonObject();
-      logger.info(withRequestId(ctx.get("requestId"),"Parsing request body: " + obj.encodePrettily()));
+      logger.debug(withRequestId(ctx.get("requestId"),"Parsing request body: " + obj.encodePrettily()));
       pojo = parser.apply(obj);
     } catch (Exception e) {
       ErrorHandler.respondError(ctx, e);
@@ -29,7 +29,7 @@ public class RestUtils {
     T value = null;
     try {
        value = parser.apply(ctx.pathParam(param));
-      logger.info(withRequestId(ctx.get("requestId"),"Parsing request param " +param+"="+value ));
+      logger.debug(withRequestId(ctx.get("requestId"),"Parsing request param " +param+"="+value ));
     } catch (Exception e) {
       ErrorHandler.respondError(ctx, e);
     }
