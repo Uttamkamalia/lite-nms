@@ -37,7 +37,6 @@ public class ActiveMetricGroupRegistry {
 
   public void put(Integer deviceTypeId, Integer metricGroupId, JsonObject value) {
     String key = getKey(deviceTypeId, metricGroupId);
-    logger.debug("yo! Adding polling job for " + key + " : " + Json.encodePrettily(value));
     if(size++ < 10) {
       put(key, value);
     }
@@ -46,7 +45,6 @@ public class ActiveMetricGroupRegistry {
 
   public Collection<JsonObject> get(String key) {
     Collection<JsonObject> result = batches.get(key);
-    logger.debug("yo! Getting polling jobs for " + key + " : " + Json.encodePrettily(result));
     return result;
   }
 

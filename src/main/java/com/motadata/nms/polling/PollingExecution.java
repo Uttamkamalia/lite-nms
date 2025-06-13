@@ -38,7 +38,7 @@ public class PollingExecution {
       boolean finished = process.waitFor(pollingJobTimeoutMs, TimeUnit.MILLISECONDS);
 
       if (!finished) {
-        logger.error("Timeout occurred while waiting for polling job (jobId={})" );
+        logger.error("Timeout occurred while waiting for polling job:"+encodedJob);
         process.destroyForcibly(); //
       } else {
         int exitCode = process.exitValue();

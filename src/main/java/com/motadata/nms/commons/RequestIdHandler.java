@@ -15,13 +15,11 @@ public class RequestIdHandler implements Handler<RoutingContext> {
   public void handle(RoutingContext ctx) {
     String requestId = UUID.randomUUID().toString();  // or use timestamp-based ID
 
-    // Store in routing context for downstream use
     ctx.put(REQUEST_ID_KEY, requestId);
 
-    // Set in response header
+
     ctx.response().putHeader("X-Request-ID", requestId);
 
-    // Proceed to next handler
     ctx.next();
   }
 

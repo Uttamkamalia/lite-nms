@@ -4,7 +4,7 @@ import com.motadata.nms.commons.VertxProvider;
 import com.motadata.nms.discovery.DiscoveryResultTracker;
 import com.motadata.nms.discovery.DiscoveryResultTrackerRegistry;
 import com.motadata.nms.models.ProvisionedDevice;
-import io.vertx.core.AsyncResult;
+
 import io.vertx.core.Promise;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -12,7 +12,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 import java.io.BufferedReader;
-import java.io.File;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -25,8 +25,9 @@ public class DiscoveryBatchExecution {
   private static final String PLUGIN_EXECUTION_MODE = "DISCOVERY";
   private static final String PLUGIN_OUTPUT_JSON_FIELD_SUCCESSFUL_DEVICES = "successful";
   private static final String PLUGIN_OUTPUT_JSON_FIELD_FAILED_DEVICES = "failed";
+  public static final String PROVISIONED = "PROVISIONED";
 
-  private DiscoveryJob job;
+  private final DiscoveryJob job;
   private final String pluginExecutableDir;
 
   private final String inputFile;
@@ -129,7 +130,7 @@ public class DiscoveryBatchExecution {
         provisionedDevice.setHostname(hostname);
         provisionedDevice.setOs(os);
         provisionedDevice.setOs(os);
-        provisionedDevice.setStatus("PROVISIONED");
+        provisionedDevice.setStatus(PROVISIONED);
 
         // Save the device to the database
         log.info("Trying to save provisioned device: " + provisionedDevice);

@@ -7,8 +7,7 @@
   </appender>
 
   <logger name="io.vertx" level="INFO"/>
-  <logger name="com.motadata" level="INFO"/> <!-- Your project package -->
-
+  <logger name="com.motadata" level="INFO"/>
   <root level="INFO">
     <appender-ref ref="STDOUT" />
   </root>
