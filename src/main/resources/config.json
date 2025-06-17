@@ -17,23 +17,12 @@
   "polling": {
     "scheduler_instances": 3,
     "batch_size": 300,
-    "default_polling_interval_ms": 60000,
+    "default_polling_interval_ms": 120000,
     "plugin_executable": "/home/uttam-kamalia/Documents/goprac/go-plugin/ssh-plugin/ssh_plugin",
     "default_polling_job_timeout_ms": 10000,
-    "polling_worker_pool_size": 5
+    "polling_worker_pool_size": 10
   },
   "http": {
     "port": 10200
-  },
-  "security": {
-    "encryption": {
-      "masterKey": "MotadataNMSSecureKey2023",
-      "algorithm": "AES/CBC/PKCS5Padding",
-      "secretKeyAlgorithm": "PBKDF2WithHmacSHA256",
-      "keyLength": 256,
-      "iterationCount": 65536,
-      "ivLength": 16,
-      "saltLength": 16
-    }
   }
 }

@@ -37,10 +37,7 @@ public class ActiveMetricGroupRegistry {
 
   public void put(Integer deviceTypeId, Integer metricGroupId, JsonObject value) {
     String key = getKey(deviceTypeId, metricGroupId);
-    if(size++ < 10) {
-      put(key, value);
-    }
-
+    put(key, value);
   }
 
   public Collection<JsonObject> get(String key) {

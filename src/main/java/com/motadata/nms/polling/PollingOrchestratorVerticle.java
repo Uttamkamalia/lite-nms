@@ -96,6 +96,7 @@ public class PollingOrchestratorVerticle extends AbstractVerticle {
 
     Integer pollingInterval = metricGroup.getInteger("polling_interval_seconds", 60); // Add config default
     Integer totalDevices = 0;
+    Integer totalBatches = 0;
 
     List<JsonObject> deviceBatch = new ArrayList<>();
     for (int i = 0; i < devices.size(); i++) {
@@ -114,14 +115,17 @@ public class PollingOrchestratorVerticle extends AbstractVerticle {
           .put("devices", new JsonArray(deviceBatch));
 
         ActiveMetricGroupRegistry.getInstance().put(deviceTypeId, metricGroupId, batchPollingJob);
-        sendPollingBatchForScheduling(jobId, metricGroupId, deviceTypeId, pollingInterval);
-
         totalDevices += deviceBatch.size();
+        totalBatches++;
         deviceBatch = new ArrayList<>();
       }
-
-      logger.debug("Total devices for polling: " + totalDevices);
     }
+    // refactor
+    sendPollingBatchForScheduling("nil", metricGroupId, deviceTypeId, pollingInterval);
+
+    logger.info("Metric group: " + metricGroupId + " === Total devices for polling: " + totalDevices);
+    logger.info("Metric group: " + metricGroupId + " === Total batches for polling: " + totalBatches);
+    logger.info("Metric group: " + metricGroupId + " === batch-size for polling: " + pollingBatchSize);
   }
 
   private void sendPollingBatchForScheduling(String jobId, Integer metricGroupId, int deviceTypeId, int pollingIntervalSeconds) {
@@ -129,7 +133,6 @@ public class PollingOrchestratorVerticle extends AbstractVerticle {
       " devices for metric group " + metricGroupId);
 
     JsonObject batchJob = new JsonObject()
-      .put("job_id", jobId)
       .put("metric_group_id", metricGroupId)
       .put("device_type_id", deviceTypeId)
       .put("polling_interval_seconds", pollingIntervalSeconds);

@@ -38,7 +38,7 @@ CREATE TABLE motadata.discovery_profile (
 );
 
 CREATE TABLE motadata.provisioned_devices (
-    id SERIAL PRIMARY KEY,
+    id SERIAL PRIMARY KEY,   --- primary key needs to be figured whether to keep (id , ip)
 
     ip VARCHAR(255) NOT NULL,
     port INT,

@@ -68,14 +68,15 @@ public class PollingSchedulerVerticle extends AbstractVerticle {
     private long schedulePollingTask(Integer metricGroupId, Integer deviceTypeId, Integer pollingInterval) {
         long intervalMs = pollingInterval * 1000L;
 
-        return vertx.setPeriodic(intervalMs, timerId -> {
+        // TODO : need to figure out initial-delay
+        return vertx.setPeriodic(intervalMs  , intervalMs, timerId -> {
           Collection<JsonObject> pollingJobs = ActiveMetricGroupRegistry.getInstance().get(getKey(deviceTypeId, metricGroupId));
 
             if (pollingJobs.isEmpty() ) {
                 logger.warn("No polling jobs found for metric group " + metricGroupId);
                 return;
             }
-            logger.debug("Executing polling for metric group " + metricGroupId + " with " + pollingJobs.size() + " jobs");
+            logger.info("Executing polling for metric group " + metricGroupId + " with " + pollingJobs.size() * config().getJsonObject(ConfigKeys.POLLING).getInteger(POLLING_BATCH_SIZE,1) + " devices at every: "+ intervalMs/1000 + " seconds");
 
             pollingJobs.forEach(job -> {
               logger.debug("Sending Polling-job for execution: " + job );

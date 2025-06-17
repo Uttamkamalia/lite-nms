@@ -27,7 +27,7 @@ public class DiscoveryVerticle extends AbstractVerticle {
   private static final Logger logger = LoggerFactory.getLogger(DiscoveryVerticle.class);
 
   private int batchSize = 1;
-  private int discoveryRequestTimeout = 10;
+  private int discoveryRequestTimeout = 10; //TODO convert to ms
   private String pluginIODir;
   private String pluginExecutableDir;
   private long discoveryBatchTimeout;
@@ -61,6 +61,8 @@ public class DiscoveryVerticle extends AbstractVerticle {
     String requestId = discoverProfileIdMsg.headers().get(REQUEST_ID_KEY);
     JsonObject request = new JsonObject().put(DISCOVERY_PROFILE_ID, discoveryProfileId);
 
+    // TODO: need to figure out whether to use request(as context-building is concerned) or send
+    // TODO: also configure some feasible timeout for context-building response => use DeliveryOptions.setSendTimeout(configuredTimeout)
     vertx.eventBus()
       .request(DISCOVERY_CONTEXT_BUILD.name(), request, getRequestIdDeliveryOpts(requestId), contextBuildReply -> {
 

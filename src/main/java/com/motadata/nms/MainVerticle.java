@@ -89,11 +89,11 @@ public class MainVerticle extends AbstractVerticle {
       .setConfig(config)
       .setInstances(1);
 
-    Integer pollingSchedularInstanceCount = config.getJsonObject(POLLING).getInteger(POLLING_SCHEDULER_INSTANCES, 1);
+    Integer pollingSchedulerInstanceCount = config.getJsonObject(POLLING).getInteger(POLLING_SCHEDULER_INSTANCES, 1);
     Integer pollingWorkerPoolSize = config.getJsonObject(POLLING).getInteger(POLLING_WORKER_POOL_SIZE, 2);
     DeploymentOptions pollingSchedularDeploymentOptions = new DeploymentOptions()
       .setConfig(config)
-      .setInstances(pollingSchedularInstanceCount) // polling scheduler threads required to handle vertx.setPeriodic()
+      .setInstances(pollingSchedulerInstanceCount) // polling scheduler threads required to handle vertx.setPeriodic()
       .setWorkerPoolName("polling-worker-pool")
       .setWorkerPoolSize(pollingWorkerPoolSize); // worker threads required to handle polling-executions via executeBlocking()
 
